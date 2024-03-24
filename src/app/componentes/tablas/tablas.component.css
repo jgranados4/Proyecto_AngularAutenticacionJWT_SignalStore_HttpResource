@@ -1,0 +1,7 @@
+section .table {
+  /**centrar la tabla */
+  margin: 0 auto;
+}
+button {
+  margin-right: 10px;
+}

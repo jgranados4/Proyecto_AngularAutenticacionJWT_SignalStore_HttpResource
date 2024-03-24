@@ -1,0 +1,81 @@
+<app-navbar />
+<section class="table-container">
+  <table class="table">
+    <caption class="title is-2">
+      Tabla de Contenido
+    </caption>
+    <thead>
+      <tr>
+        <th>Id</th>
+        <th><abbr title="Position">Nombre</abbr></th>
+        <th>Apellido</th>
+        <th>Estado</th>
+        <th style="text-align: center">Accion</th>
+      </tr>
+    </thead>
+    <tbody>
+      @if (myObservables$ |async; as data ) {@for (item of data; track item.id)
+      {
+      <tr
+        [ngClass]="{ 'is-selected': isSelected }"
+        (mouseenter)="MouseEnter()"
+        (mouseleave)="MouseLeave()"
+      >
+        @if(isEditing == 'crear'){
+        <th>{{ item.id }}</th>
+        <th>{{ item.nombre }}</th>
+        <td>{{ item.apellido }}</td>
+        <td>{{ item.estado }}</td>
+        <td>
+          <button class="button is-link" (click)="capturarContenido(item)">
+            Editar
+          </button>
+          <button class="button is-danger">Borrar</button>
+        </td>
+        }@else if (isEditing == 'editar') {
+        <th>{{ item.id }}</th>
+        <th>
+          <input class="input" type="text" [(ngModel)]="item.nombre" />
+        </th>
+        <td>
+          <input class="input" type="text" [(ngModel)]="item.apellido" />
+        </td>
+        <td>
+          <input class="input" type="text" [(ngModel)]="item.estado" />
+        </td>
+        <td>
+          <button class="button is-link" (click)="Editar(item.id, item)">
+            Guardar
+          </button>
+          <button class="button is-danger" (click)="Cancelar()">
+            Cancelar
+          </button>
+        </td>
+        }
+      </tr>
+      } @empty {
+      <h1>No hay Contenido</h1>
+      }}
+      <tr>
+        <th>id</th>
+        <th>
+          <input class="input" type="text" [(ngModel)]="datos.nombre" />
+        </th>
+        <td>
+          <input class="input" type="text" [(ngModel)]="datos.apellido" />
+        </td>
+        <td>
+          <input class="input" type="text" [(ngModel)]="datos.estado" />
+        </td>
+      </tr>
+    </tbody>
+    <!-- Crear contenido con un boton -->
+    <section>
+      <button class="button is-dark" (click)="crear()">Crear</button>
+      <button class="button is-danger" (click)="crear()">Eliminar Todo</button>
+    </section>
+  </table>
+</section>
+@if (messageBoolean==true) {
+<app-mensajes />
+}
