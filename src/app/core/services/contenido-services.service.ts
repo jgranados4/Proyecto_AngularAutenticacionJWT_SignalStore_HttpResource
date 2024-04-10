@@ -7,38 +7,38 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 })
 export class ContenidoServicesService {
   private readonly URL = environment.url;
+  //*Cabecera
+  private readonly headers = new HttpHeaders({
+    'Content-Type': 'application/json; charset=utf-8',
+  });
 
   constructor(private http: HttpClient) {}
   //*Crear
   PostContenido(datos: any) {
-    const headers = new HttpHeaders({
-      'Content-Type': 'application/json; charset=utf-8',
-    });
-
     return this.http.post(`${this.URL}/Usuarios`, datos, {
-      headers,
+      headers: this.headers,
     });
   }
   //*Metodo de Obtener todo  con Procedure
   GetContenido(i: number) {
-    const headers = new HttpHeaders({
-      'Content-Type': 'application/json; charset=utf-8',
-    });
-
     const body = JSON.stringify({ i });
 
     return this.http.post(`${this.URL}/Usuarios/ProcedureUsuario`, body, {
-      headers,
+      headers: this.headers,
     });
   }
   //* editar
-  PutContenido(id: number,datos:any) {
-    const headers = new HttpHeaders({
-      'Content-Type': 'application/json; charset=utf-8',
-    });
-
+  PutContenido(id: number, datos: any) {
     return this.http.put(`${this.URL}/Usuarios/${id}`, datos, {
-      headers,
+      headers: this.headers,
     });
+  }
+  //*Eliminar
+  DeleteContenido(id: number) {
+    return this.http.delete(`${this.URL}/Usuarios/${id}`);
+  }
+  //*Eliminar todo
+  AllContenido() {
+    return this.http.delete(`${this.URL}/Usuarios/DeleteTotal`);
   }
 }
