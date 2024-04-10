@@ -1,9 +1,14 @@
 <app-navbar />
-<div class="container">
+<form class="container" [formGroup]="formGroup">
   <div class="field">
     <label for="" class="label"> Nombre </label>
     <div class="control">
-      <input class="input" type="text" placeholder="Ingrese el Nombre" />
+      <input
+        class="input"
+        formControlName="nombre"
+        type="text"
+        placeholder="Ingrese el Nombre"
+      />
     </div>
   </div>
   <div class="field">
@@ -11,6 +16,7 @@
     <div class="control">
       <input
         class="input"
+        formControlName="constrasena"
         type="password"
         placeholder="Ingrese el contraseña"
       />
@@ -19,12 +25,26 @@
   <div class="field">
     <label for="" class="label"> Email </label>
     <div class="control">
-      <input class="input" type="email" placeholder="Ingrese el Email" />
+      <input
+        class="input"
+        formControlName="email"
+        type="email"
+        placeholder="Ingrese el Email"
+      />
     </div>
   </div>
   <div class="field">
     <p class="control">
-      <button class="button is-success">acceso</button>
+      <button
+        class="button is-success"
+        (click)="registrar()"
+        [disabled]="formGroup.invalid"
+      >
+        acceso
+      </button>
     </p>
   </div>
-</div>
+</form>
+@if (messageBoolean==true) {
+<app-mensajes />
+}

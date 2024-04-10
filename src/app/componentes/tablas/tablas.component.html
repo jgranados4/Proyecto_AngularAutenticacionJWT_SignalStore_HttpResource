@@ -11,6 +11,9 @@
         <th>Apellido</th>
         <th>Estado</th>
         <th style="text-align: center">Accion</th>
+        <span class="icon">
+          <fa-icon [icon]="faRepeat" (click)="RecargarPagina()"></fa-icon>
+        </span>
       </tr>
     </thead>
     <tbody>
@@ -30,7 +33,9 @@
           <button class="button is-link" (click)="capturarContenido(item)">
             Editar
           </button>
-          <button class="button is-danger">Borrar</button>
+          <button class="button is-danger" (click)="Eliminar(item.id)">
+            Borrar
+          </button>
         </td>
         }@else if (isEditing == 'editar') {
         <th>{{ item.id }}</th>
@@ -72,7 +77,7 @@
     <!-- Crear contenido con un boton -->
     <section>
       <button class="button is-dark" (click)="crear()">Crear</button>
-      <button class="button is-danger" (click)="crear()">Eliminar Todo</button>
+      <button class="button is-danger" (click)="All()">Eliminar Todo</button>
     </section>
   </table>
 </section>
