@@ -3,7 +3,12 @@
   <div class="field">
     <label for="" class="label"> Email </label>
     <div class="control">
-      <input class="input" type="email" placeholder="Ingrese el Email" />
+      <input
+        class="input"
+        formControlName="email"
+        type="email"
+        placeholder="Ingrese el Email"
+      />
     </div>
   </div>
   <div class="field">
@@ -12,13 +17,23 @@
       <input
         class="input"
         type="password"
+        formControlName="constrasena"
         placeholder="Ingrese el contraseña"
       />
     </div>
   </div>
   <div class="field">
     <p class="control">
-      <button class="button is-success">acceso</button>
+      <button
+        (click)="login()"
+        [disabled]="formgroups.invalid"
+        class="button is-success"
+      >
+        acceso
+      </button>
     </p>
   </div>
 </form>
+@if (messageBoolean==true) {
+<app-mensajes />
+}
