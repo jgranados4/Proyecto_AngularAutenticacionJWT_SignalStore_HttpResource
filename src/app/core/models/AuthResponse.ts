@@ -1,6 +1,6 @@
 export interface AuthResponse {
   token?: token;
-  Message?: string;
+  message?: string;
 }
 
 type token = string | null | undefined;
