@@ -35,7 +35,6 @@ export class IniciarComponent {
     this.usuarios.Login(login).subscribe({
       next: (data: AuthResponse) => {
         let tk = JSON.stringify(data.token);
-        console.log(tk);
         this.GetToken = JSON.parse(tk);
         localStorage.setItem('token', this.GetToken);
       },
