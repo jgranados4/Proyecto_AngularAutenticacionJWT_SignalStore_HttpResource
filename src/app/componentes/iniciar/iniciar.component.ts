@@ -10,6 +10,7 @@ import { UsuariosService } from '../../core/services/usuarios.service';
 import { MensajesComponent } from '../mensajes/mensajes.component';
 import { Login, Usuario } from '../../core/models/usuario';
 import { AuthResponse } from '../../core/models/AuthResponse';
+import { MessageService } from '../../core/services/message.service';
 
 @Component({
   selector: 'app-iniciar',
@@ -25,7 +26,9 @@ export class IniciarComponent {
     email: new FormControl('', [Validators.required, Validators.email]),
     constrasena: new FormControl('', [Validators.required]),
   });
-  constructor(private usuarios: UsuariosService) {}
+  //*Inject
+  usuarios = inject(UsuariosService);
+  msj = inject(MessageService);
   login(): void {
     const login: Login<string> = {
       email: this.formgroups.value.email,
@@ -34,7 +37,11 @@ export class IniciarComponent {
     console.log(login);
     this.usuarios.Login(login).subscribe({
       next: (data: AuthResponse) => {
+        let message = JSON.stringify(data.message);
+        console.log(message);
         let tk = JSON.stringify(data.token);
+        this.messageBoolean = true;
+        this.msj.sendMessage(message);
         this.GetToken = JSON.parse(tk);
         localStorage.setItem('token', this.GetToken);
       },
@@ -42,5 +49,8 @@ export class IniciarComponent {
         console.log(error);
       },
     });
+  }
+  logout(): void {
+    this.usuarios.logout();
   }
 }
