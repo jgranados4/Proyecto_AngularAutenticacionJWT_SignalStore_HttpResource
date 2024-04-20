@@ -12,7 +12,11 @@
         <th>Estado</th>
         <th style="text-align: center">Accion</th>
         <span class="icon">
-          <fa-icon [icon]="faRepeat" (click)="RecargarPagina()"></fa-icon>
+          <fa-icon
+            [ngClass]="{ 'fa-beat': clickAni }"
+            [icon]="faRepeat"
+            (click)="RecargarPagina()"
+          ></fa-icon>
         </span>
       </tr>
     </thead>

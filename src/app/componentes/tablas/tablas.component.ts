@@ -1,4 +1,4 @@
-import { Component, OnInit, Renderer2 } from '@angular/core';
+import { Component, inject, OnInit, Renderer2 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { NavbarComponent } from '../navbar/navbar.component';
 import { ContenidoServicesService } from '../../core/services/contenido-services.service';
@@ -25,9 +25,12 @@ import { faRepeat } from '@fortawesome/free-solid-svg-icons';
   styleUrl: './tablas.component.css',
 })
 export class TablasComponent implements OnInit {
+  //*Injections
+  router = inject(Router);
   //*Variables
   faRepeat = faRepeat;
   isSelected: boolean = false;
+  clickAni: boolean = false;
   datos: Usuario<any> = { nombre: '', apellido: '', estado: '' };
   myObservables$: BehaviorSubject<any> = new BehaviorSubject<any>(null);
   isEditing: string = '';
@@ -37,8 +40,7 @@ export class TablasComponent implements OnInit {
   constructor(
     private renderer: Renderer2,
     private contenido: ContenidoServicesService,
-    private msj: MessageService,
-    private router: Router
+    private msj: MessageService
   ) {}
   ngOnInit(): void {
     this.contenido.GetContenido(1).subscribe({
@@ -149,6 +151,7 @@ export class TablasComponent implements OnInit {
   }
   //
   RecargarPagina() {
+    this.clickAni = true;
     console.log('Recargar');
     this.router.navigateByUrl('/', { skipLocationChange: true }).then(() => {
       this.router.navigate(['Tablas']);
