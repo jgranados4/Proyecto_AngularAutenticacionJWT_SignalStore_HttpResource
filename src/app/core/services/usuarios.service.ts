@@ -30,4 +30,7 @@ export class UsuariosService {
       headers: this.headers,
     });
   }
+  logout(): void {
+    localStorage.removeItem('token');
+  }
 }
