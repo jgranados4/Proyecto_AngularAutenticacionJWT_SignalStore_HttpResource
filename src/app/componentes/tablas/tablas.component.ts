@@ -60,6 +60,12 @@ export class TablasComponent implements OnInit {
     });
   }
   //
+  clickAnimation() {
+    this.clickAni = true;
+    setTimeout(() => {
+      this.clickAni = false;
+    }, 1000);
+  }
   MouseEnter(): void {
     this.isSelected = true;
   }
