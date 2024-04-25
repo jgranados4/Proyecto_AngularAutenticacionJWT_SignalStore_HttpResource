@@ -11,6 +11,8 @@ import { MensajesComponent } from '../mensajes/mensajes.component';
 import { Login, Usuario } from '../../core/models/usuario';
 import { AuthResponse } from '../../core/models/AuthResponse';
 import { MessageService } from '../../core/services/message.service';
+import { Router } from '@angular/router';
+import { delay } from 'rxjs';
 
 @Component({
   selector: 'app-iniciar',
@@ -28,27 +30,31 @@ export class IniciarComponent {
   });
   //*Inject
   usuarios = inject(UsuariosService);
+  router = inject(Router);
   msj = inject(MessageService);
   login(): void {
     const login: Login<string> = {
       email: this.formgroups.value.email,
       constrasena: this.formgroups.value.constrasena,
     };
-    console.log(login);
-    this.usuarios.Login(login).subscribe({
-      next: (data: AuthResponse) => {
-        let message = JSON.stringify(data.message);
-        console.log(message);
-        let tk = JSON.stringify(data.token);
-        this.messageBoolean = true;
-        this.msj.sendMessage(message);
-        this.GetToken = JSON.parse(tk);
-        localStorage.setItem('token', this.GetToken);
-      },
-      error: (error) => {
-        console.log(error);
-      },
-    });
+    this.usuarios
+      .Login(login)
+      .pipe(delay(1000))
+      .subscribe({
+        next: (data: AuthResponse) => {
+          let message = JSON.stringify(data.message);
+          console.log(message);
+          let tk = JSON.stringify(data.token);
+          this.messageBoolean = true;
+          this.msj.sendMessage(message);
+          this.GetToken = JSON.parse(tk);
+          localStorage.setItem('token', this.GetToken);
+          this.router.navigate(['/Tablas']);
+        },
+        error: (error) => {
+          console.log(error);
+        },
+      });
   }
   logout(): void {
     this.usuarios.logout();
