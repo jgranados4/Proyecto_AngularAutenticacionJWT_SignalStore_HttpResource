@@ -1,4 +1,26 @@
 <app-navbar />
+<!-- dropdown -->
+<div class="dropdown is-hoverable">
+  <div class="dropdown-trigger">
+    <button class="button" aria-haspopup="true" aria-controls="dropdown-menu3">
+      <span>Seleccionar Contenido</span>
+      <span class="icon is-small">
+        <i class="fas fa-angle-down" aria-hidden="true"></i>
+      </span>
+    </button>
+  </div>
+  <div class="dropdown-menu" id="dropdown-menu3" role="menu">
+    <div class="dropdown-content">
+      <a class="dropdown-item" (click)="ScrollAll('tabla1')"> Forma 1 Tabla </a>
+      <a href="#" class="dropdown-item"> Forma 2 Tabla </a>
+      <a href="#" class="dropdown-item"> Factura </a>
+      <hr class="dropdown-divider" />
+      <a href="#" class="dropdown-item"> More </a>
+    </div>
+  </div>
+</div>
+<!--  -->
+@if(tablas == 'tabla1'){
 <section class="table-container">
   <table class="table">
     <caption class="title is-2">
@@ -86,6 +108,6 @@
     </section>
   </table>
 </section>
-@if (messageBoolean==true) {
+}@else if(tablas == 'tabla2'){ } @if (messageBoolean==true) {
 <app-mensajes />
 }

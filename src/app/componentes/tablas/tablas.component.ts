@@ -28,6 +28,7 @@ export class TablasComponent implements OnInit {
   //*Injections
   router = inject(Router);
   //*Variables
+  tablas: string = '';
   faRepeat = faRepeat;
   isSelected: boolean = false;
   clickAni: boolean = false;
@@ -162,5 +163,9 @@ export class TablasComponent implements OnInit {
     this.router.navigateByUrl('/', { skipLocationChange: true }).then(() => {
       this.router.navigate(['Tablas']);
     });
+  }
+  //* Scroll
+  ScrollAll(tablaId: string): void {
+    this.tablas = tablaId;
   }
 }
