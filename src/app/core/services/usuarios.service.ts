@@ -33,4 +33,8 @@ export class UsuariosService {
   logout(): void {
     localStorage.removeItem('token');
   }
+  getToken(): string {
+    let token: string | null | any = localStorage.getItem('token');
+    return token;
+  }
 }
