@@ -2,6 +2,7 @@ import { inject, Injectable } from '@angular/core';
 import { environment } from '../../../environments/environment';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Login, Usuario } from '../models/usuario';
+import { CookieService } from 'ngx-cookie-service';
 
 @Injectable({
   providedIn: 'root',
@@ -13,6 +14,7 @@ export class UsuariosService {
     'Content-Type': 'application/json; charset=utf-8',
   });
   //*inect
+  private _cookies = inject(CookieService);
   private http = inject(HttpClient);
   constructor() {}
   ObtenerUsuarios() {
@@ -31,10 +33,12 @@ export class UsuariosService {
     });
   }
   logout(): void {
-    localStorage.removeItem('token');
+    this._cookies.delete('token');
+  }
+  setToken(data: any): void {
+    return this._cookies.set('token', data);
   }
   getToken(): string {
-    let token: string | null | any = localStorage.getItem('token');
-    return token;
+    return this._cookies.get('token');
   }
 }
