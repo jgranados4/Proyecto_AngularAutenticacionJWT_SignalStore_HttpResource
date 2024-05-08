@@ -12,6 +12,7 @@ import { UsuariosService } from '../../core/services/usuarios.service';
 export class NavbarComponent {
   usuarios = inject(UsuariosService);
   logout(): void {
+    console.log('logout');
     this.usuarios.logout();
   }
   //obtener el nombre del token
