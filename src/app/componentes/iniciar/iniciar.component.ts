@@ -42,21 +42,19 @@ export class IniciarComponent {
       .pipe(delay(1000))
       .subscribe({
         next: (data: AuthResponse) => {
+          this.usuarios.setToken(data.token);
           let message = JSON.stringify(data.message);
           console.log(message);
-          let tk = JSON.stringify(data.token);
+          // let tk = JSON.stringify(data.token);
           this.messageBoolean = true;
           this.msj.sendMessage(message);
-          this.GetToken = JSON.parse(tk);
-          localStorage.setItem('token', this.GetToken);
+          // this.GetToken = JSON.parse(tk);
+          // localStorage.setItem('token', this.GetToken);
           this.router.navigate(['/Tablas']);
         },
         error: (error) => {
           console.log(error);
         },
       });
-  }
-  logout(): void {
-    this.usuarios.logout();
   }
 }
