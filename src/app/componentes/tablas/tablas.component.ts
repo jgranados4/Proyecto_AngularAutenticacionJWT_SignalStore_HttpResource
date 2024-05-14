@@ -10,6 +10,7 @@ import { MensajesComponent } from '../mensajes/mensajes.component';
 import { MessageService } from '../../core/services/message.service';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { faRepeat } from '@fortawesome/free-solid-svg-icons';
+import { TablaGridComponent } from '../../shared/components/tabla-grid/tabla-grid.component';
 
 @Component({
   selector: 'app-tablas',
@@ -18,6 +19,7 @@ import { faRepeat } from '@fortawesome/free-solid-svg-icons';
     FormsModule,
     NavbarComponent,
     MensajesComponent,
+    TablaGridComponent,
     CommonModule,
     FontAwesomeModule,
   ],
