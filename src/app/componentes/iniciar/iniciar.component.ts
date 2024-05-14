@@ -8,7 +8,7 @@ import {
 } from '@angular/forms';
 import { UsuariosService } from '../../core/services/usuarios.service';
 import { MensajesComponent } from '../mensajes/mensajes.component';
-import { Login, Usuario } from '../../core/models/usuario';
+import { Login } from '../../core/models/usuario';
 import { AuthResponse } from '../../core/models/AuthResponse';
 import { MessageService } from '../../core/services/message.service';
 import { Router } from '@angular/router';
