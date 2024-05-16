@@ -27,7 +27,15 @@
       <div class="navbar-item">
         <div class="buttons">
           <!-- iniciar sesion -->
-          @if(Token()){
+          @if( !checkToken()){
+          <a class="button is-primary" [routerLink]="['/Registrar']">
+            <strong>Regístrate</strong>
+          </a>
+          <a class="button is-light" [routerLink]="['/login']">
+            Iniciar sesión
+          </a>
+          }@else if(checkToken() ) {
+          <p class="navbar-item">{{ Getusuarios.name }}</p>
           <a
             class="button is-danger"
             (click)="logout()"
@@ -35,13 +43,7 @@
           >
             Cerrar sesión
           </a>
-          }@else {
-          <a class="button is-primary" [routerLink]="['/Registrar']">
-            <strong>Regístrate</strong>
-          </a>
-          <a class="button is-light" [routerLink]="['/login']">
-            Iniciar sesión
-          </a>
+
           }
         </div>
       </div>
