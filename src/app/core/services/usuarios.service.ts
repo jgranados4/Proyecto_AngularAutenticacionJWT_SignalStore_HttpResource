@@ -6,6 +6,7 @@ import { CookieService } from 'ngx-cookie-service';
 import { jwtDecode, JwtPayload } from 'jwt-decode';
 import { tokenpayload } from '../models/AuthResponse';
 import { BehaviorSubject } from 'rxjs';
+import { Router } from '@angular/router';
 
 @Injectable({
   providedIn: 'root',
@@ -19,6 +20,7 @@ export class UsuariosService {
   //*inject
   private _cookies = inject(CookieService);
   private http = inject(HttpClient);
+  router = inject(Router);
   //*Observable
   public exp: BehaviorSubject<number> = new BehaviorSubject<number>(0);
   ObtenerUsuarios() {
@@ -38,6 +40,7 @@ export class UsuariosService {
   }
   logout(): void {
     this._cookies.delete('token');
+    this.router.navigate(['/login']);
   }
   setToken(data: any): void {
     return this._cookies.set('token', data);

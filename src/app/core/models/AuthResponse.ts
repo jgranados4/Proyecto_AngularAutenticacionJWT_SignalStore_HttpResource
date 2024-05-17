@@ -9,5 +9,6 @@ export interface tokenpayload {
   email?: string;
   exp?: number;
   iss?: string;
-  name?: string;
+  name?: nombre;
 }
+type nombre = string|undefined|null;
