@@ -35,7 +35,7 @@
             Iniciar sesión
           </a>
           }@else if(checkToken() ) {
-          <p class="navbar-item">{{ Getusuarios.name }}</p>
+          <p class="navbar-item">{{ Getusuarios }}</p>
           <a
             class="button is-danger"
             (click)="logout()"

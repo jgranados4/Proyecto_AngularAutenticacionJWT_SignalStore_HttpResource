@@ -3,7 +3,7 @@ import { RouterLink } from '@angular/router';
 import { UsuariosService } from '../../core/services/usuarios.service';
 import { tokenpayload } from '../../core/models/AuthResponse';
 import { JsonPipe } from '@angular/common';
-import { Subscription } from 'rxjs';
+import { Subscription, timeout } from 'rxjs';
 
 @Component({
   selector: 'app-navbar',
@@ -19,17 +19,17 @@ export class NavbarComponent implements OnInit, OnDestroy {
   //*Observables
   private tokenExpire: Subscription = new Subscription();
   //*variables
-  Getusuarios: tokenpayload = {};
+  Getusuarios: string = ''; // Change the type from '{}' to 'string'
   //*iniciar el componente
   ngOnInit(): void {
-    this.Getusuarios = this.usuarios.TokenDecoded() as tokenpayload;
+    //tiempo
+    this.Getusuarios = this.usuarios.TokenDecoded()?.name || '';
     this.tokenExpire = this.usuarios.exp.subscribe((exp) => {
       console.log('exp', new Date(exp));
       const expiration = new Date(exp);
       if (new Date() >= expiration) {
         this.logout();
         //recargar la pagina
-        window.location.reload();
       }
     });
   }
