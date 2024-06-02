@@ -22,7 +22,6 @@ export class ContenidoServicesService {
   //*Metodo de Obtener todo  con Procedure
   GetContenido(i: number) {
     const body = JSON.stringify({ i });
-
     return this.http.post(`${this.URL}/Usuarios/ProcedureUsuario`, body, {
       headers: this.headers,
     });
