@@ -43,13 +43,8 @@
       </tr>
     </thead>
     <tbody>
-      @if (myObservables$ |async; as data ) {@for (item of data; track item.id)
-      {
-      <tr
-        [ngClass]="{ 'is-selected': isSelected }"
-        (mouseenter)="MouseEnter()"
-        (mouseleave)="MouseLeave()"
-      >
+      @if (datosS() ) {@for (item of datosS(); track item.id) {
+      <tr>
         @if(isEditing == 'crear'){
         <th>{{ item.id }}</th>
         <th>{{ item.nombre }}</th>
@@ -90,13 +85,13 @@
       <tr>
         <th>id</th>
         <th>
-          <input class="input" type="text" [(ngModel)]="datos.nombre" />
+          <input class="input" type="text" [(ngModel)]="dataS().nombre" />
         </th>
         <td>
-          <input class="input" type="text" [(ngModel)]="datos.apellido" />
+          <input class="input" type="text" [(ngModel)]="dataS().apellido" />
         </td>
         <td>
-          <input class="input" type="text" [(ngModel)]="datos.estado" />
+          <input class="input" type="text" [(ngModel)]="dataS().estado" />
         </td>
       </tr>
     </tbody>

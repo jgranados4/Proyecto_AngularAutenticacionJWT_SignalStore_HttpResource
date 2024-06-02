@@ -1,16 +1,24 @@
-import { Component, inject, OnInit, Renderer2 } from '@angular/core';
+import {
+  Component,
+  computed,
+  effect,
+  inject,
+  input,
+  OnInit,
+  signal,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { NavbarComponent } from '../navbar/navbar.component';
 import { ContenidoServicesService } from '../../core/services/contenido-services.service';
-import { BehaviorSubject, delay, Subscription } from 'rxjs';
-import { Usuario } from '../../core/models/usuario';
+import { delay } from 'rxjs';
+import { Usuario } from '@core/models/usuario';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { MensajesComponent } from '../mensajes/mensajes.component';
-import { MessageService } from '../../core/services/message.service';
+import { MessageService } from '@core/services/message.service';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { faRepeat } from '@fortawesome/free-solid-svg-icons';
-import { TablaGridComponent } from '../../shared/components/tabla-grid/tabla-grid.component';
+import { TablaGridComponent } from '@shared/components/tabla-grid/tabla-grid.component';
 
 @Component({
   selector: 'app-tablas',
@@ -32,26 +40,29 @@ export class TablasComponent implements OnInit {
   //*Variables
   tablas: string = '';
   faRepeat = faRepeat;
-  isSelected: boolean = false;
+  // isSelected: boolean = false;
   clickAni: boolean = false;
-  datos: Usuario<any> = { nombre: '', apellido: '', estado: '' };
-  myObservables$: BehaviorSubject<any> = new BehaviorSubject<any>(null);
+  dataS = input<any>({ nombre: '', apellido: '', estado: '' });
+  //senal
+  datosS = signal<any>(null);
   isEditing: string = '';
   messageBoolean: boolean = false;
-  private mensajeSubscription: Subscription = new Subscription();
   //
   constructor(
-    private renderer: Renderer2,
     private contenido: ContenidoServicesService,
     private msj: MessageService
-  ) {}
+  ) {
+    effect(() => {
+      console.log(`inicio ${JSON.stringify(this.datosS())}`);
+    });
+  }
   ngOnInit(): void {
     this.contenido.GetContenido(1).subscribe({
       next: (data: any) => {
         const filterData = data.filter(
           (item: Usuario<any>) => item.estado !== 'I'
         );
-        this.myObservables$.next(filterData);
+        this.datosS.set(filterData);
         this.isEditing = 'crear';
         setTimeout(() => {
           this.messageBoolean = false;
@@ -69,21 +80,19 @@ export class TablasComponent implements OnInit {
       this.clickAni = false;
     }, 1000);
   }
-  MouseEnter(): void {
-    this.isSelected = true;
-  }
-  MouseLeave(): void {
-    this.isSelected = false;
-  }
+  // MouseEnter(): void {
+  //   this.isSelected = true;
+  // }
+  // MouseLeave(): void {
+  //   this.isSelected = false;
+  // }
   //Crear
   crear() {
-    console.log('Crear', this.datos);
     this.contenido
-      .PostContenido(this.datos)
+      .PostContenido(this.dataS())
       .pipe(delay(1000))
       .subscribe({
         next: (datos: any) => {
-          console.log(datos);
           const message = 'creado con exito';
           this.msj.sendMessage(message);
           this.messageBoolean = true;
@@ -93,7 +102,7 @@ export class TablasComponent implements OnInit {
         },
       });
     //limpiar input
-    this.datos = { nombre: '', apellido: '', estado: '' };
+    this.dataS();
   }
   //contenido
   capturarContenido(data: any) {
@@ -101,13 +110,11 @@ export class TablasComponent implements OnInit {
   }
   //editar el contenido
   Editar(id: number, data: any) {
-    console.log('Editar', id, data);
     this.contenido
       .PutContenido(id, data)
       .pipe(delay(1000))
       .subscribe({
         next: (data: any) => {
-          console.log(data);
           const message = 'editado con exito';
           this.msj.sendMessage(message);
           this.messageBoolean = true;
