@@ -1,8 +1,10 @@
-<p>tabla-grid works!</p>
 <ag-grid-angular
-id="myGrid"
-  class="ag-theme-quartz"
-  [ngStyle]="{ height: '200px', width: '800px' }"
-  [rowData]="rowData"
+  id="myGrid"
+  class="ag-theme-quartz-dark"
+  [ngStyle]="{ height: '350px', width: '85%' }"
+  [rowData]="rowDatassignal()"
   [columnDefs]="colDefs"
 />
+ @if (messageBoolean==true) {
+<app-mensajes />
+}
