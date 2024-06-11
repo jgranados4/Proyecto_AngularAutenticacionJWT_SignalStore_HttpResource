@@ -1,6 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { NavbarComponent } from '../navbar/navbar.component';
 import {
+  FormBuilder,
   FormControl,
   FormGroup,
   ReactiveFormsModule,
@@ -10,29 +11,35 @@ import { UsuariosService } from '../../core/services/usuarios.service';
 import { MessageService } from '../../core/services/message.service';
 import { MensajesComponent } from '../mensajes/mensajes.component';
 import { delay } from 'rxjs';
+import { JsonPipe } from '@angular/common';
 
 @Component({
   selector: 'app-registrate',
   standalone: true,
-  imports: [NavbarComponent, MensajesComponent, ReactiveFormsModule],
+  imports: [NavbarComponent, MensajesComponent, ReactiveFormsModule, JsonPipe],
   templateUrl: './registrate.component.html',
   styleUrl: './registrate.component.css',
 })
 export class RegistrateComponent {
   messageBoolean: boolean = false;
-  constructor(private usuario: UsuariosService, private msj: MessageService) {}
+  //*inject
+  usuario = inject(UsuariosService);
+  msj = inject(MessageService);
+  fb = inject(FormBuilder);
   //*Formulario Reactivo
-  formGroup = new FormGroup({
-    nombre: new FormControl('', [Validators.required]),
-    constrasena: new FormControl('', [Validators.required]),
-    email: new FormControl('', [Validators.required, Validators.email]),
+  formbuil = this.fb.group({
+    nombre: ['', [Validators.required]],
+    constrasena: [
+      '',
+      [Validators.required, Validators.minLength(4), Validators.maxLength(10)],
+    ],
+    email: ['', [Validators.required, Validators.email]],
   });
 
   //*Registrar
   registrar() {
-    console.log(this.formGroup.value);
     this.usuario
-      .PostUsuario(this.formGroup.value)
+      .PostUsuario(this.formbuil.value)
       .pipe(delay(1000))
       .subscribe({
         next: (data) => {
