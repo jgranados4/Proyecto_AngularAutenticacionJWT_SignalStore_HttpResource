@@ -1,4 +1,4 @@
-<form class="box" [formGroup]="formgroups">
+<form class="box" [formGroup]="formbuild">
   <div class="field">
     <label for="" class="label"> Email </label>
     <div class="control">
@@ -8,8 +8,10 @@
         type="email"
         placeholder="Ingrese el Email"
       />
-      @if(formgroups.controls.email.hasError('required')){
+      @if(formbuild.get('email')?.hasError('required')){
       <p>se requiere el Email</p>
+      }@else if ( formbuild.get('email')?.hasError('email') ) {
+      <p>el email no es valido</p>
       }
     </div>
   </div>
@@ -22,8 +24,10 @@
         formControlName="constrasena"
         placeholder="Ingrese el contraseña"
       />
-      @if(formgroups.controls.constrasena.hasError('required')){
+      @if(formbuild.get('constrasena')?.hasError('required')){
       <p>se requiere la contrasena</p>
+      }@else if ( formbuild.get('constrasena')?.hasError('minlength') ) {
+      <p>la contrasena debe tener al menos 4 caracteres</p>
       }
     </div>
   </div>
@@ -31,7 +35,7 @@
     <p class="control">
       <button
         (click)="login()"
-        [disabled]="formgroups.invalid"
+        [disabled]="formbuild.invalid"
         class="button is-success"
       >
         acceso
@@ -39,6 +43,9 @@
     </p>
   </div>
 </form>
+<!-- <pre>
+  {{ formbuild.value | json }}
+</pre> -->
 @if (messageBoolean==true) {
 <app-mensajes />
 }

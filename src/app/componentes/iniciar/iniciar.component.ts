@@ -1,41 +1,48 @@
 import { Component, inject } from '@angular/core';
 import { NavbarComponent } from '../navbar/navbar.component';
 import {
+  FormBuilder,
   FormControl,
   FormGroup,
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
-import { UsuariosService } from '../../core/services/usuarios.service';
+import { UsuariosService } from '@core/services/usuarios.service';
 import { MensajesComponent } from '../mensajes/mensajes.component';
 import { Login } from '../../core/models/usuario';
 import { AuthResponse } from '../../core/models/AuthResponse';
 import { MessageService } from '../../core/services/message.service';
 import { Router } from '@angular/router';
 import { delay } from 'rxjs';
+import { JsonPipe } from '@angular/common';
 
 @Component({
   selector: 'app-iniciar',
   standalone: true,
-  imports: [NavbarComponent, ReactiveFormsModule, MensajesComponent],
+  imports: [NavbarComponent, ReactiveFormsModule, MensajesComponent, JsonPipe],
   templateUrl: './iniciar.component.html',
   styleUrl: './iniciar.component.css',
 })
 export class IniciarComponent {
   messageBoolean: boolean = false;
   GetToken: string = '';
-  formgroups = new FormGroup({
-    email: new FormControl('', [Validators.required, Validators.email]),
-    constrasena: new FormControl('', [Validators.required]),
-  });
   //*Inject
   usuarios = inject(UsuariosService);
   router = inject(Router);
   msj = inject(MessageService);
+  public fb = inject(FormBuilder);
+  //
+  formbuild = this.fb.group({
+    email: ['', [Validators.required, Validators.email]],
+    constrasena: [
+      '',
+      [Validators.required, Validators.minLength(4), Validators.maxLength(10)],
+    ],
+  });
   login(): void {
     const login: Login<string> = {
-      email: this.formgroups.value.email,
-      constrasena: this.formgroups.value.constrasena,
+      email: this.formbuild.value.email,
+      constrasena: this.formbuild.value.constrasena,
     };
     this.usuarios
       .Login(login)
