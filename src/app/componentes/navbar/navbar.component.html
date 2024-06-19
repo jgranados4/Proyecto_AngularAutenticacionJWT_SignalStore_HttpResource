@@ -1,10 +1,11 @@
 <nav class="navbar" role="navigation" aria-label="main navigation">
   <!-- <div class="navbar-brand"></div> -->
-
   <div id="navbarBasicExample" class="navbar-menu">
     <div class="navbar-start">
+      <a class="navbar-item" (click)="toggleSidebar()">
+        <fa-icon [icon]="faBars"></fa-icon>
+      </a>
       <a class="navbar-item" [routerLink]="['/Home']"> Home </a>
-
       <a
         class="navbar-item"
         [routerLink]="['/Tablas']"
@@ -50,3 +51,4 @@
     </div>
   </div>
 </nav>
+<app-menu [active]="isSidebarActive()" />

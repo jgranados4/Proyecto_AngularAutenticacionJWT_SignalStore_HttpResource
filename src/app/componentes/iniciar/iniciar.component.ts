@@ -60,7 +60,7 @@ export class IniciarComponent {
           this.router.navigate(['/Tablas']);
         },
         error: (error) => {
-          console.log(error);
+          console.log('error', error);
         },
       });
   }
