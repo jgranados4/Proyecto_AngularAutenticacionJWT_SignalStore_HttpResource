@@ -22,6 +22,7 @@
           <hr class="navbar-divider" />
         </div>
       </div>
+      <p class="navbar-item">{{ fecha() | date : "medium" }}</p>
     </div>
 
     <div class="navbar-end">
@@ -36,7 +37,7 @@
             Iniciar sesión
           </a>
           }@else if(checkToken() ) {
-          <p class="navbar-item">{{ Getusuarios }}</p>
+          <p class="navbar-item">{{ Getusuarios() }}</p>
           <a
             class="button is-danger"
             (click)="logout()"

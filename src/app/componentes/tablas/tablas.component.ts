@@ -53,7 +53,7 @@ export class TablasComponent implements OnInit {
     private msj: MessageService
   ) {
     effect(() => {
-      console.log(`inicio ${JSON.stringify(this.datosS())}`);
+      // console.log(`inicio ${JSON.stringify(this.datosS())}`);
     });
   }
   ngOnInit(): void {

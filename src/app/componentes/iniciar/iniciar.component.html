@@ -1,4 +1,4 @@
-<form class="box" [formGroup]="formbuild">
+<form class="box" [formGroup]="formbuild" (ngSubmit)="login()">
   <div class="field">
     <label for="" class="label"> Email </label>
     <div class="control">
@@ -34,7 +34,7 @@
   <div class="field">
     <p class="control">
       <button
-        (click)="login()"
+        type="submit"
         [disabled]="formbuild.invalid"
         class="button is-success"
       >

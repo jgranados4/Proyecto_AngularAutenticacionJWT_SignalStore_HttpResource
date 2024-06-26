@@ -1,4 +1,5 @@
 import {
+  ChangeDetectorRef,
   Component,
   effect,
   inject,
@@ -9,16 +10,22 @@ import {
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { UsuariosService } from '../../core/services/usuarios.service';
-import { Subscription } from 'rxjs';
+import { interval } from 'rxjs';
 import { faBars } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { MenuComponent } from '../menu/menu.component';
-import { CommonModule } from '@angular/common';
+import { CommonModule, DatePipe } from '@angular/common';
 
 @Component({
   selector: 'app-navbar',
   standalone: true,
-  imports: [RouterLink, FontAwesomeModule, MenuComponent, CommonModule],
+  imports: [
+    RouterLink,
+    FontAwesomeModule,
+    MenuComponent,
+    CommonModule,
+    DatePipe,
+  ],
   templateUrl: './navbar.component.html',
   styleUrl: './navbar.component.css',
 })
@@ -28,26 +35,41 @@ export class NavbarComponent implements OnInit, OnDestroy {
   isAuthenticated: boolean = false;
   //*Inject
   usuarios = inject(UsuariosService);
+
   //*Observables
-  private tokenExpire: Subscription = new Subscription();
+  private tokenExpire = signal<number>(0);
   //*variables
-  Getusuarios: string = ''; // Change the type from '{}' to 'string'
+  fecha = signal<string>('');
+  Getusuarios = signal<string>('');
   isSidebarActive = signal<boolean>(false);
   //*iniciar el componente
   constructor() {
     effect(() => {
-      console.log('isSidebarActive', this.isSidebarActive());
+      console.log('Getusuarios', this.Getusuarios());
     });
   }
+  ngAfterViewChecked(): void {
+    //Called after every check of the component's view. Applies to components only.
+    //Add 'implements AfterViewChecked' to the class.
+    const decodedName = this.usuarios.TokenDecoded()?.name;
+    if (decodedName) {
+      this.Getusuarios.set(decodedName);
+    }
+  }
   ngOnInit(): void {
+    this.fecha.set(new Date().toISOString());
+    interval(1000).subscribe(() => {
+      this.fecha.set(new Date().toISOString());
+    });
     //tiempo
-    this.Getusuarios = this.usuarios.TokenDecoded()?.name || '';
-    this.tokenExpire = this.usuarios.exp.subscribe((exp) => {
+    this.usuarios.exp.update((exp: any) => {
       const expiration = new Date(exp);
       if (new Date() >= expiration) {
+        console.log('expirado');
         this.logout();
-        //recargar la pagina
       }
+      this.tokenExpire.set(exp);
+      return exp;
     });
   }
   toggleSidebar() {
@@ -55,21 +77,16 @@ export class NavbarComponent implements OnInit, OnDestroy {
   }
   logout(): void {
     console.log('logout');
+    this.Getusuarios.set('');
     this.usuarios.logout();
     this.isAuthenticated = false;
   }
-  // Token(): void | any {
-  //   console.log(this.usuarios.getToken().decoded?.name);
-  //   return this.usuarios.getToken().token;
-  // }
-  //chequear si el token existe, si existe mostrar el nombre del usuario y el boton de logout
-  //si no existe mostrar el boton de login
   checkToken(): boolean {
     return (this.isAuthenticated = this.usuarios.isAuthenticatedToken()
       ? true
       : false);
   }
   ngOnDestroy(): void {
-    this.tokenExpire.unsubscribe();
+    this.tokenExpire();
   }
 }

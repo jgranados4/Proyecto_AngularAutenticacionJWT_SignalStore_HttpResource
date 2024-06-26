@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, inject } from '@angular/core';
 import { NavbarComponent } from '../navbar/navbar.component';
 import {
   FormBuilder,
@@ -58,8 +58,10 @@ export class IniciarComponent {
           // this.GetToken = JSON.parse(tk);
           // localStorage.setItem('token', this.GetToken);
           this.router.navigate(['/Tablas']);
+
+          //recargar pagina con angular
         },
-        error: (error) => {
+        error: (error: any) => {
           console.log('error', error);
         },
       });
