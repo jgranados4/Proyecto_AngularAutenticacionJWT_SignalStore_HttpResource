@@ -1,12 +1,13 @@
-import { inject, Injectable } from '@angular/core';
+import { inject, Injectable, signal } from '@angular/core';
 import { environment } from '../../../environments/environment';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Login } from '../models/usuario';
+import { Login, Usuario } from '../models/usuario';
 import { CookieService } from 'ngx-cookie-service';
 import { jwtDecode, JwtPayload } from 'jwt-decode';
 import { tokenpayload } from '../models/AuthResponse';
-import { BehaviorSubject } from 'rxjs';
 import { Router } from '@angular/router';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { Observable } from 'rxjs';
 
 @Injectable({
   providedIn: 'root',
@@ -22,9 +23,9 @@ export class UsuariosService {
   private http = inject(HttpClient);
   router = inject(Router);
   //*Observable
-  public exp: BehaviorSubject<number> = new BehaviorSubject<number>(0);
+  public exp = signal<number>(0);
   ObtenerUsuarios() {
-    return this.http.get(`${this.URL}/UsuarioAUs`);
+    return this.http.get<Usuario<number | string>>(`${this.URL}/UsuarioAUs`);
   }
   //*Crear
   PostUsuario(datos: any) {
@@ -55,18 +56,17 @@ export class UsuariosService {
   }
   //agregar tiempo cookies  y el tiempo viene en el token
   TokenDecoded(): tokenpayload | null {
-    let decoded: JwtPayload | null = null;
     try {
       const token = this.getToken();
-      if (token) {
-        //enviarlo tambien en el return
-        decoded = jwtDecode<JwtPayload>(token);
-        console.log('decoded', decoded);
-        this.exp.next((decoded.exp as number) * 1000);
+      if (!token) {
+        return null;
       }
+      const decoded = jwtDecode<tokenpayload>(token);
+      this.exp.set((decoded.exp as number) * 1000);
+      return decoded;
     } catch (error) {
       console.log(error);
+      return null;
     }
-    return decoded as tokenpayload;
   }
 }
