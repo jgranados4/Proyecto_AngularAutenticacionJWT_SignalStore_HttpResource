@@ -10,5 +10,7 @@ export interface tokenpayload {
   exp?: number;
   iss?: string;
   name?: nombre;
+  http?: string;
+  nameid?: number;
 }
-type nombre = string|undefined|null;
+type nombre = string | undefined | null;

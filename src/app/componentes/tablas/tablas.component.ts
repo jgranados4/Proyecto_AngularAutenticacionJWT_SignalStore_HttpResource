@@ -5,6 +5,7 @@ import {
   inject,
   input,
   OnInit,
+  output,
   signal,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -40,14 +41,12 @@ export class TablasComponent implements OnInit {
   //*Variables
   tablas: string = '';
   faRepeat = faRepeat;
-  // isSelected: boolean = false;
   clickAni: boolean = false;
-  dataS = input<any>({ nombre: '', apellido: '', estado: '' });
-  //senal
+  dataS = signal<any>({ nombre: '', apellido: '', estado: '' });
   datosS = signal<any>(null);
   isEditing: string = '';
   messageBoolean: boolean = false;
-  //
+
   constructor(
     private contenido: ContenidoServicesService,
     private msj: MessageService

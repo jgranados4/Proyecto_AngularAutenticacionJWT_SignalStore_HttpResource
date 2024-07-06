@@ -62,6 +62,7 @@ export class UsuariosService {
         return null;
       }
       const decoded = jwtDecode<tokenpayload>(token);
+      console.log('decode', decoded);
       this.exp.set((decoded.exp as number) * 1000);
       return decoded;
     } catch (error) {
