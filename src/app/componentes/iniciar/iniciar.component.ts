@@ -57,7 +57,7 @@ export class IniciarComponent {
           this.msj.sendMessage(message);
           // this.GetToken = JSON.parse(tk);
           // localStorage.setItem('token', this.GetToken);
-          this.router.navigate(['/Tablas']);
+          this.router.navigate(['/dashboard']);
 
           //recargar pagina con angular
         },
