@@ -26,7 +26,6 @@ import { TablaGridComponent } from '@shared/components/tabla-grid/tabla-grid.com
   standalone: true,
   imports: [
     FormsModule,
-    NavbarComponent,
     MensajesComponent,
     TablaGridComponent,
     CommonModule,
