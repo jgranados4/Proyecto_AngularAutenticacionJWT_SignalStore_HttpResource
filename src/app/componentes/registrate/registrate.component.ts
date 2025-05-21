@@ -12,6 +12,7 @@ import { MessageService } from '../../core/services/message.service';
 import { MensajesComponent } from '../mensajes/mensajes.component';
 import { delay } from 'rxjs';
 import { JsonPipe } from '@angular/common';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-registrate',
@@ -25,6 +26,7 @@ export class RegistrateComponent {
   //*inject
   usuario = inject(UsuariosService);
   msj = inject(MessageService);
+  router=inject(Router)
   fb = inject(FormBuilder);
   //*Formulario Reactivo
   formbuil = this.fb.group({
@@ -47,6 +49,9 @@ export class RegistrateComponent {
           const message = 'Registro Exitoso';
           this.msj.sendMessage(message);
           this.messageBoolean = true;
+          setTimeout(() => {
+            this.router.navigateByUrl('/login')
+          }, 1000);
         },
         error: (error) => {
           console.log(error);
