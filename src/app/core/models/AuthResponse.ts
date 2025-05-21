@@ -14,3 +14,11 @@ export interface tokenpayload {
   nameid?: number;
 }
 type nombre = string | undefined | null;
+export interface tokenpayload2 {
+  id: number;
+  nombre: string;
+  email: string;
+  rol: string;
+  expiracion: Date;
+  tiempoRestante: number;
+}
