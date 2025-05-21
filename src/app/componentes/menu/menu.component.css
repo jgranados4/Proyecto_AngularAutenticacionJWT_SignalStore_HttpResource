@@ -1,8 +1,0 @@
-.menu {
-  max-width: 150px;
-  display: none;
-}
-
-.menu.is-active {
-  display: block;
-}
