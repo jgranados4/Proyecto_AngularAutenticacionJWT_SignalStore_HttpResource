@@ -14,12 +14,11 @@ import { AuthResponse } from '../../core/models/AuthResponse';
 import { MessageService } from '../../core/services/message.service';
 import { Router } from '@angular/router';
 import { delay } from 'rxjs';
-import { JsonPipe } from '@angular/common';
 
 @Component({
   selector: 'app-iniciar',
   standalone: true,
-  imports: [NavbarComponent, ReactiveFormsModule, MensajesComponent, JsonPipe],
+  imports: [NavbarComponent, ReactiveFormsModule, MensajesComponent],
   templateUrl: './iniciar.component.html',
   styleUrl: './iniciar.component.css',
 })
@@ -40,6 +39,7 @@ export class IniciarComponent {
     ],
   });
   login(): void {
+    console.log('formualario', this.formbuild.value);
     const login: Login<string> = {
       email: this.formbuild.value.email,
       constrasena: this.formbuild.value.constrasena,
@@ -52,6 +52,7 @@ export class IniciarComponent {
           this.usuarios.setToken(data.token);
           let message = JSON.stringify(data.message);
           console.log(message);
+          console.log(data.token);
           // let tk = JSON.stringify(data.token);
           this.messageBoolean = true;
           this.msj.sendMessage(message);
