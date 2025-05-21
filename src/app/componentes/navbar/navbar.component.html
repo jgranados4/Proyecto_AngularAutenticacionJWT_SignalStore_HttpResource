@@ -2,9 +2,6 @@
   <!-- <div class="navbar-brand"></div> -->
   <div id="navbarBasicExample" class="navbar-menu">
     <div class="navbar-start">
-      <a class="navbar-item" (click)="toggleSidebar()">
-        <fa-icon [icon]="faBars"></fa-icon>
-      </a>
       <a class="navbar-item" [routerLink]="['/dashboard/Home']"> Home </a>
       <a
         class="navbar-item"
@@ -23,21 +20,23 @@
         </div>
       </div>
       <p class="navbar-item">{{ fecha() | date : "medium" }}</p>
+      <p class="navbar-item">{{ decodedToken()?.expiracion }}</p>
     </div>
 
     <div class="navbar-end">
       <div class="navbar-item">
         <div class="buttons">
           <!-- iniciar sesion -->
-          @if( !checkToken()){
+          @if( !isAuthenticated()){
           <a class="button is-primary" [routerLink]="['/Registrar']">
             <strong>Regístrate</strong>
           </a>
           <a class="button is-light" [routerLink]="['/login']">
             Iniciar sesión
           </a>
-          }@else if(checkToken() ) {
-          <p class="navbar-item">{{ Getusuarios() }}</p>
+          }@else {
+          <p class="navbar-item">{{ decodedToken()?.nombre }}</p>
+          <p class="navbar-item">{{ decodedToken()?.rol }}</p>
           <a
             class="button is-danger"
             (click)="logout()"
@@ -52,4 +51,3 @@
     </div>
   </div>
 </nav>
-<app-menu [active]="isSidebarActive()" />

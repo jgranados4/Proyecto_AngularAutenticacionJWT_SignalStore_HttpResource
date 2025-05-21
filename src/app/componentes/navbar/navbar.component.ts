@@ -1,7 +1,11 @@
 import {
+  ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
+  computed,
   effect,
+  EffectCleanupFn,
+  EffectRef,
   inject,
   model,
   OnDestroy,
@@ -13,80 +17,69 @@ import { UsuariosService } from '../../core/services/usuarios.service';
 import { interval } from 'rxjs';
 import { faBars } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
-import { MenuComponent } from '../menu/menu.component';
 import { CommonModule, DatePipe } from '@angular/common';
+import { tokenpayload2 } from '@app/core/models/AuthResponse';
 
 @Component({
   selector: 'app-navbar',
   standalone: true,
-  imports: [
-    RouterLink,
-    FontAwesomeModule,
-    MenuComponent,
-    CommonModule,
-    DatePipe,
-  ],
+  imports: [RouterLink, FontAwesomeModule, CommonModule, DatePipe],
   templateUrl: './navbar.component.html',
   styleUrl: './navbar.component.css',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class NavbarComponent implements OnInit, OnDestroy {
+export class NavbarComponent {
   //icon
   faBars = faBars;
-  isAuthenticated: boolean = false;
   //*Inject
   usuarios = inject(UsuariosService);
 
   //*Observables
   private tokenExpire = signal<number>(0);
   //*variables
-  fecha = signal<string>('');
-  Getusuarios = signal<string>('');
+  readonly fecha = signal<string>(new Date().toISOString());
+  decodedToken = signal<tokenpayload2 | null>(null);
+  readonly isAuthenticated = computed(() =>
+    this.usuarios.isAuthenticatedToken()
+  );
+  readonly nombreUsuario = computed(() => this.decodedToken()?.nombre ?? '');
   isSidebarActive = signal<boolean>(false);
+
   //*iniciar el componente
   constructor() {
-    effect(() => {
-      console.log('Getusuarios', this.Getusuarios());
-    });
-  }
-  ngAfterViewChecked(): void {
-    //Called after every check of the component's view. Applies to components only.
-    //Add 'implements AfterViewChecked' to the class.
-    const decodedName = this.usuarios.TokenDecoded()?.name;
-    if (decodedName) {
-      this.Getusuarios.set(decodedName);
-    }
-  }
-  ngOnInit(): void {
-    this.fecha.set(new Date().toISOString());
     interval(1000).subscribe(() => {
       this.fecha.set(new Date().toISOString());
     });
-    //tiempo
-    this.usuarios.exp.update((exp: any) => {
-      const expiration = new Date(exp);
-      if (new Date() >= expiration) {
-        console.log('expirado');
-        this.logout();
+
+    effect(
+      () => {
+        if (this.isAuthenticated()) {
+          const token = this.usuarios.getToken();
+          this.usuarios.TokenDecoded2(token).subscribe({
+            next: (result) => {
+              if (result) {
+                this.decodedToken.set(result);
+                console.log('Token decodificado:', result);
+              } else {
+                console.warn('No se pudo decodificar el token.');
+              }
+            },
+            error: (err) => console.error('Error en la petición:', err),
+          });
+        } else {
+        }
+      },
+      {
+        allowSignalWrites: true,
       }
-      this.tokenExpire.set(exp);
-      return exp;
-    });
+    );
   }
   toggleSidebar() {
     this.isSidebarActive.set(!this.isSidebarActive());
   }
   logout(): void {
     console.log('logout');
-    this.Getusuarios.set('');
     this.usuarios.logout();
-    this.isAuthenticated = false;
-  }
-  checkToken(): boolean {
-    return (this.isAuthenticated = this.usuarios.isAuthenticatedToken()
-      ? true
-      : false);
-  }
-  ngOnDestroy(): void {
-    this.tokenExpire();
+    this.decodedToken.set(null);
   }
 }
