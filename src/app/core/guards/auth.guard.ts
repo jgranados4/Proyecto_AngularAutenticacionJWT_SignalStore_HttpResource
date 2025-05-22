@@ -4,7 +4,7 @@ import { UsuariosService } from '../services/usuarios.service';
 export const authGuard: CanActivateFn = (route, state) => {
   const Usuario = inject(UsuariosService);
   //token
-  const tok = Usuario.isAuthenticatedToken();
+  const tok = Usuario.checkToken();
   if (tok) {
     return true;
   }
