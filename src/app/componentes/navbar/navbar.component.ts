@@ -39,9 +39,8 @@ export class NavbarComponent {
   //*variables
   readonly fecha = signal<string>(new Date().toISOString());
   decodedToken = signal<tokenpayload2 | null>(null);
-  readonly isAuthenticated = computed(() =>
-    this.usuarios.isAuthenticatedToken()
-  );
+  isAuthenticated = computed(() => this.usuarios.checkToken());
+
   readonly nombreUsuario = computed(() => this.decodedToken()?.nombre ?? '');
   isSidebarActive = signal<boolean>(false);
 
@@ -53,6 +52,7 @@ export class NavbarComponent {
 
     effect(
       () => {
+        console.log('boolean', this.isAuthenticated());
         if (this.isAuthenticated()) {
           const token = this.usuarios.getToken();
           this.usuarios.TokenDecoded2(token).subscribe({
@@ -66,7 +66,6 @@ export class NavbarComponent {
             },
             error: (err) => console.error('Error en la petición:', err),
           });
-        } else {
         }
       },
       {
@@ -78,7 +77,6 @@ export class NavbarComponent {
     this.isSidebarActive.set(!this.isSidebarActive());
   }
   logout(): void {
-    console.log('logout');
     this.usuarios.logout();
     this.decodedToken.set(null);
   }

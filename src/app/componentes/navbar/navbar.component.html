@@ -27,14 +27,14 @@
       <div class="navbar-item">
         <div class="buttons">
           <!-- iniciar sesion -->
-          @if( !isAuthenticated()){
+          @if( isAuthenticated()=== false){
           <a class="button is-primary" [routerLink]="['/Registrar']">
             <strong>Regístrate</strong>
           </a>
           <a class="button is-light" [routerLink]="['/login']">
             Iniciar sesión
           </a>
-          }@else {
+          }@else if(isAuthenticated()=== true) {
           <p class="navbar-item">{{ decodedToken()?.nombre }}</p>
           <p class="navbar-item">{{ decodedToken()?.rol }}</p>
           <a
