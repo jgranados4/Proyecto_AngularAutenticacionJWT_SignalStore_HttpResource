@@ -22,6 +22,8 @@ export class UsuariosService {
   private _cookies = inject(CookieService);
   private http = inject(HttpClient);
   router = inject(Router);
+  private CheckToken = signal<boolean>(this._cookies.check('token'));
+  checkToken = this.CheckToken.asReadonly();
   //*Observable
   ObtenerUsuarios() {
     return this.http.get<Usuario<number | string>>(`${this.URL}/UsuarioAUs`);
@@ -39,20 +41,20 @@ export class UsuariosService {
     });
   }
   logout(): void {
+    this.CheckToken.set(false);
+    console.log('boolen', this.checkToken());
     this._cookies.delete('token');
     this.router.navigate(['/login']);
   }
   setToken(data: any): void {
-    return this._cookies.set('token', data);
+    this.CheckToken.set(true);
+    this._cookies.set('token', data);
   }
   getToken(): string | null {
     let token = this._cookies.get('token');
     return token;
   }
   //*Chequear si el token existe
-  isAuthenticatedToken(): boolean {
-    return this._cookies.check('token');
-  }
 
   TokenDecoded2(token: string | unknown): Observable<tokenpayload2 | null> {
     const tokenStr = typeof token === 'string' ? token : '';
