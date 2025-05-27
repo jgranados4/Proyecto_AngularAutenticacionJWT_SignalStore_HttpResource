@@ -9,15 +9,15 @@ import {
 } from '@angular/forms';
 import { UsuariosService } from '../../core/services/usuarios.service';
 import { MessageService } from '../../core/services/message.service';
-import { MensajesComponent } from '../mensajes/mensajes.component';
 import { delay } from 'rxjs';
 import { JsonPipe } from '@angular/common';
 import { Router } from '@angular/router';
+import { ToastrService } from 'ngx-toastr';
 
 @Component({
   selector: 'app-registrate',
   standalone: true,
-  imports: [NavbarComponent, MensajesComponent, ReactiveFormsModule, JsonPipe],
+  imports: [NavbarComponent, ReactiveFormsModule, JsonPipe],
   templateUrl: './registrate.component.html',
   styleUrl: './registrate.component.css',
 })
@@ -26,8 +26,9 @@ export class RegistrateComponent {
   //*inject
   usuario = inject(UsuariosService);
   msj = inject(MessageService);
-  router=inject(Router)
+  router = inject(Router);
   fb = inject(FormBuilder);
+  toast = inject(ToastrService);
   //*Formulario Reactivo
   formbuil = this.fb.group({
     nombre: ['', [Validators.required]],
@@ -36,10 +37,12 @@ export class RegistrateComponent {
       [Validators.required, Validators.minLength(4), Validators.maxLength(10)],
     ],
     email: ['', [Validators.required, Validators.email]],
+    rol: ['', Validators.required],
   });
 
   //*Registrar
   registrar() {
+    const usuarioRegistrado = `Usuario: ${this.formbuil.value.nombre}\nCorreo: ${this.formbuil.value.email}\nTipo: ${this.formbuil.value.rol}`;
     this.usuario
       .PostUsuario(this.formbuil.value)
       .pipe(delay(1000))
@@ -47,10 +50,10 @@ export class RegistrateComponent {
         next: (data) => {
           console.log(data);
           const message = 'Registro Exitoso';
-          this.msj.sendMessage(message);
+          this.msj.success(usuarioRegistrado, message);
           this.messageBoolean = true;
           setTimeout(() => {
-            this.router.navigateByUrl('/login')
+            this.router.navigateByUrl('/login');
           }, 1000);
         },
         error: (error) => {

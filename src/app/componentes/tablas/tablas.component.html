@@ -12,7 +12,7 @@
     <div class="dropdown-content">
       <a class="dropdown-item" (click)="ScrollAll('tabla1')"> Forma 1 Tabla </a>
       <a class="dropdown-item" (click)="ScrollAll('tabla2')"> Forma 2 Tabla </a>
-      <a  class="dropdown-item"> Factura </a>
+      <a class="dropdown-item"> Factura </a>
       <hr class="dropdown-divider" />
       <a href="#" class="dropdown-item"> More </a>
     </div>
@@ -104,6 +104,4 @@
 </section>
 }@else if(tablas == 'tabla2'){
 <app-tabla-grid />
-} @if (messageBoolean==true) {
-<app-mensajes />
 }

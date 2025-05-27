@@ -12,7 +12,9 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideRouter(routes),
     provideAnimations(),
-    provideToastr({ timeOut: 900, preventDuplicates: true }),
-    provideHttpClient(withInterceptors([tokenInterceptor,errorInterceptorInterceptor])),
+    provideToastr({ timeOut: 4000, preventDuplicates: true }),
+    provideHttpClient(
+      withInterceptors([tokenInterceptor, errorInterceptorInterceptor])
+    ),
   ],
 };

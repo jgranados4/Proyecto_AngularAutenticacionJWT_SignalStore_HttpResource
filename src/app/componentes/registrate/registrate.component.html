@@ -44,6 +44,24 @@
     </div>
   </div>
   <div class="field">
+    <label for="" class="label">Rol</label>
+    <div class="control">
+      <label>
+        <input type="radio" formControlName="rol" value="cliente" />
+        Cliente
+      </label>
+      <label>
+        <input type="radio" formControlName="rol" value="Administrador" />
+        Administrador
+      </label>
+    </div>
+    @if( formbuil.get('userType')?.touched &&
+    formbuil.get('userType')?.hasError('required')){
+    <p>se requiere el email</p>
+    }
+  </div>
+
+  <div class="field">
     <p class="control">
       <button
         class="button is-success"
@@ -58,6 +76,3 @@
 <!-- <pre>
   {{ formbuil.value | json }}
 </pre> -->
-@if (messageBoolean==true) {
-<app-mensajes />
-}

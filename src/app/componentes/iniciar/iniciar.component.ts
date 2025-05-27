@@ -8,7 +8,6 @@ import {
   Validators,
 } from '@angular/forms';
 import { UsuariosService } from '@core/services/usuarios.service';
-import { MensajesComponent } from '../mensajes/mensajes.component';
 import { Login } from '../../core/models/usuario';
 import { AuthResponse } from '../../core/models/AuthResponse';
 import { MessageService } from '../../core/services/message.service';
@@ -18,7 +17,7 @@ import { delay } from 'rxjs';
 @Component({
   selector: 'app-iniciar',
   standalone: true,
-  imports: [NavbarComponent, ReactiveFormsModule, MensajesComponent],
+  imports: [NavbarComponent, ReactiveFormsModule],
   templateUrl: './iniciar.component.html',
   styleUrl: './iniciar.component.css',
 })
@@ -55,7 +54,7 @@ export class IniciarComponent {
           console.log(data.token);
           // let tk = JSON.stringify(data.token);
           this.messageBoolean = true;
-          this.msj.sendMessage(message);
+          this.msj.success(message);
           // this.GetToken = JSON.parse(tk);
           // localStorage.setItem('token', this.GetToken);
           this.router.navigate(['/dashboard']);

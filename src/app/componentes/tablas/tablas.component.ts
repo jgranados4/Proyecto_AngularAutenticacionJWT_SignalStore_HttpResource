@@ -15,7 +15,7 @@ import { delay } from 'rxjs';
 import { Usuario } from '@core/models/usuario';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { MensajesComponent } from '../mensajes/mensajes.component';
+
 import { MessageService } from '@core/services/message.service';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { faRepeat } from '@fortawesome/free-solid-svg-icons';
@@ -24,13 +24,7 @@ import { TablaGridComponent } from '@shared/components/tabla-grid/tabla-grid.com
 @Component({
   selector: 'app-tablas',
   standalone: true,
-  imports: [
-    FormsModule,
-    MensajesComponent,
-    TablaGridComponent,
-    CommonModule,
-    FontAwesomeModule,
-  ],
+  imports: [FormsModule, TablaGridComponent, CommonModule, FontAwesomeModule],
   templateUrl: './tablas.component.html',
   styleUrl: './tablas.component.css',
 })
@@ -92,7 +86,7 @@ export class TablasComponent implements OnInit {
       .subscribe({
         next: (datos: any) => {
           const message = 'creado con exito';
-          this.msj.sendMessage(message);
+          this.msj.success(message);
           this.messageBoolean = true;
         },
         error: (error) => {
@@ -114,7 +108,7 @@ export class TablasComponent implements OnInit {
       .subscribe({
         next: (data: any) => {
           const message = 'editado con exito';
-          this.msj.sendMessage(message);
+          this.msj.success(message);
           this.messageBoolean = true;
           this.ngOnInit();
         },
@@ -132,7 +126,7 @@ export class TablasComponent implements OnInit {
         next: (data: any) => {
           console.log(data);
           const message = 'eliminado con exito';
-          this.msj.sendMessage(message);
+          this.msj.success(message);
           this.messageBoolean = true;
           this.ngOnInit();
         },
@@ -150,7 +144,7 @@ export class TablasComponent implements OnInit {
         next: (data: any) => {
           console.log(data);
           const message = 'Contenido eliminado con exito';
-          this.msj.sendMessage(message);
+          this.msj.success(message);
           this.messageBoolean = true;
           this.ngOnInit();
         },

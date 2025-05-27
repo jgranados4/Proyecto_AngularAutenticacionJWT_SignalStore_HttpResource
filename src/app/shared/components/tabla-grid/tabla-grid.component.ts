@@ -12,12 +12,11 @@ import { ContenidoServicesService } from '../../../core/services/contenido-servi
 import { Usuario } from '../../../core/models/usuario';
 import { delay } from 'rxjs';
 import { MessageService } from '../../../core/services/message.service';
-import { MensajesComponent } from '../../../componentes/mensajes/mensajes.component';
 
 @Component({
   selector: 'app-tabla-grid',
   standalone: true,
-  imports: [AgGridAngular, CommonModule, MensajesComponent],
+  imports: [AgGridAngular, CommonModule],
   templateUrl: './tabla-grid.component.html',
   styleUrl: './tabla-grid.component.css',
 })
@@ -44,7 +43,7 @@ export class TablaGridComponent implements OnInit {
           .subscribe({
             next: (data: any) => {
               const message = 'editado con exito';
-              this.msj.sendMessage(message);
+              this.msj.success(message);
               this.messageBoolean = true;
               this.ngOnInit();
             },
@@ -84,7 +83,7 @@ export class TablaGridComponent implements OnInit {
         next: (data: any) => {
           console.log(data);
           const message = 'eliminado con exito';
-          this.msj.sendMessage(message);
+          this.msj.success(message);
           this.messageBoolean = true;
           this.ngOnInit();
         },
