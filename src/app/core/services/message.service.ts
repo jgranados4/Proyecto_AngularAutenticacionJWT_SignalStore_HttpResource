@@ -1,22 +1,39 @@
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
+import { ToastrService } from 'ngx-toastr';
 import { BehaviorSubject, Observable } from 'rxjs';
 
 @Injectable({
   providedIn: 'root',
 })
 export class MessageService {
-  //Mensaje
-  private messageSubject: BehaviorSubject<string> = new BehaviorSubject<string>(
-    ''
-  );
+  toastr = inject(ToastrService);
 
   constructor() {}
-
-  sendMessage(message: string): void {
-    this.messageSubject.next(message);
+  success(message: string, title: string = 'Éxito') {
+    this.toastr.success(message, title, {
+      closeButton: true,
+      progressBar: true,
+    });
   }
 
-  getMessage(): Observable<string> {
-    return this.messageSubject.asObservable();
+  error(message: string, title: string = 'Error') {
+    this.toastr.error(message, title, {
+      closeButton: true,
+      progressBar: true,
+    });
+  }
+
+  warning(message: string, title: string = 'Advertencia') {
+    this.toastr.warning(message, title, {
+      closeButton: true,
+      progressBar: true,
+    });
+  }
+
+  info(message: string, title: string = 'Información') {
+    this.toastr.info(message, title, {
+      closeButton: true,
+      progressBar: true,
+    });
   }
 }
