@@ -40,6 +40,17 @@ export class NavbarComponent {
   readonly fecha = signal<string>(new Date().toISOString());
   decodedToken = signal<tokenpayload2 | null>(null);
   isAuthenticated = computed(() => this.usuarios.checkToken());
+  readonly tiempoRestanteToken = computed(() => {
+    const expiracionStr = this.decodedToken()?.expiracion;
+    this.fecha();
+    if (!expiracionStr) return null;
+
+    const expiracion = new Date(expiracionStr).getTime(); // en ms
+    const ahora = Date.now(); // en ms
+    const diferencia = expiracion - ahora;
+
+    return diferencia > 0 ? Math.floor(diferencia / 1000) : 0; // en segundos
+  });
 
   readonly nombreUsuario = computed(() => this.decodedToken()?.nombre ?? '');
   isSidebarActive = signal<boolean>(false);
@@ -48,6 +59,20 @@ export class NavbarComponent {
   constructor() {
     interval(1000).subscribe(() => {
       this.fecha.set(new Date().toISOString());
+      const segundosRestantes = this.tiempoRestanteToken();
+
+      if (segundosRestantes !== null) {
+        console.log('Segundos restantes:', segundosRestantes);
+
+        if (segundosRestantes === 0) {
+          console.warn('Token expirado, cerrando sesión...');
+          this.logout();
+        } else if (segundosRestantes <= 60) {
+          console.warn(
+            `¡Advertencia! El token expirará en ${segundosRestantes} segundos.`
+          );
+        }
+      }
     });
 
     effect(
@@ -76,6 +101,14 @@ export class NavbarComponent {
   toggleSidebar() {
     this.isSidebarActive.set(!this.isSidebarActive());
   }
+  formatearTiempoRestante(segundos: number): string {
+    const min = Math.floor(segundos / 60);
+    const sec = segundos % 60;
+    return `${min.toString().padStart(2, '0')}:${sec
+      .toString()
+      .padStart(2, '0')}`;
+  }
+
   logout(): void {
     this.usuarios.logout();
     this.decodedToken.set(null);

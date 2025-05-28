@@ -21,6 +21,14 @@
       </div>
       <p class="navbar-item">{{ fecha() | date : "medium" }}</p>
       <p class="navbar-item">{{ decodedToken()?.expiracion }}</p>
+      <p class="navbar-item">
+        Tiempo restante:
+        {{
+          tiempoRestanteToken() !== null
+            ? formatearTiempoRestante(tiempoRestanteToken()!)
+            : "N/D"
+        }}
+      </p>
     </div>
 
     <div class="navbar-end">

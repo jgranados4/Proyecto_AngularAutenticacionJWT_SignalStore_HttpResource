@@ -9,7 +9,7 @@ import {
 } from '@angular/forms';
 import { UsuariosService } from '@core/services/usuarios.service';
 import { Login } from '../../core/models/usuario';
-import { AuthResponse } from '../../core/models/AuthResponse';
+import { AuthResponse2 } from '../../core/models/AuthResponse';
 import { MessageService } from '../../core/services/message.service';
 import { Router } from '@angular/router';
 import { delay } from 'rxjs';
@@ -22,7 +22,6 @@ import { delay } from 'rxjs';
   styleUrl: './iniciar.component.css',
 })
 export class IniciarComponent {
-  messageBoolean: boolean = false;
   GetToken: string = '';
   //*Inject
   usuarios = inject(UsuariosService);
@@ -47,13 +46,11 @@ export class IniciarComponent {
       .Login(login)
       .pipe(delay(1000))
       .subscribe({
-        next: (data: AuthResponse) => {
-          this.usuarios.setToken(data.token);
-          let message = JSON.stringify(data.message);
-          console.log(message);
-          console.log(data.token);
+        next: (response: AuthResponse2) => {
+          console.log('response', response);
+          this.usuarios.setToken(response.data.token);
+          let message = JSON.stringify(response.message);
           // let tk = JSON.stringify(data.token);
-          this.messageBoolean = true;
           this.msj.success(message);
           // this.GetToken = JSON.parse(tk);
           // localStorage.setItem('token', this.GetToken);
