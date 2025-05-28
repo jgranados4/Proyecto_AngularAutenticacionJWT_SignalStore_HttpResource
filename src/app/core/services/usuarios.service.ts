@@ -4,7 +4,11 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Login, Usuario } from '../models/usuario';
 import { CookieService } from 'ngx-cookie-service';
 import { jwtDecode, JwtPayload } from 'jwt-decode';
-import { tokenpayload, tokenpayload2 } from '../models/AuthResponse';
+import {
+  AuthResponse2,
+  tokenpayload,
+  tokenpayload2,
+} from '../models/AuthResponse';
 import { Router } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { catchError, Observable, of } from 'rxjs';
@@ -35,10 +39,14 @@ export class UsuariosService {
     });
   }
   //*Login
-  Login(datos: Login<string>) {
-    return this.http.post(`${this.URL}/UsuarioAUs/login`, datos, {
-      headers: this.headers,
-    });
+  Login(datos: Login<string>): Observable<AuthResponse2> {
+    return this.http.post<AuthResponse2>(
+      `${this.URL}/UsuarioAUs/login`,
+      datos,
+      {
+        headers: this.headers,
+      }
+    );
   }
   logout(): void {
     this.CheckToken.set(false);
