@@ -2,6 +2,18 @@ export interface AuthResponse {
   token?: token;
   message?: string;
 }
+export interface AuthResponse2 {
+  status: {
+    code: number;
+    description: string;
+    category: number;
+  };
+  message: string;
+  data: {
+    token: string;
+    refreshToken: string;
+  };
+}
 
 type token = string | null | undefined;
 export interface tokenpayload {
