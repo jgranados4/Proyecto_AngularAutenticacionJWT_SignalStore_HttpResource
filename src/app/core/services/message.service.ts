@@ -1,6 +1,5 @@
 import { inject, Injectable } from '@angular/core';
 import { ToastrService } from 'ngx-toastr';
-import { BehaviorSubject, Observable } from 'rxjs';
 
 @Injectable({
   providedIn: 'root',
