@@ -82,5 +82,8 @@
         }
       }
     }
+  },
+  "cli": {
+    "packageManager": "bun"
   }
 }
