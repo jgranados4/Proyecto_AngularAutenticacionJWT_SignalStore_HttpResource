@@ -6,12 +6,13 @@ import { CookieService } from 'ngx-cookie-service';
 import { jwtDecode, JwtPayload } from 'jwt-decode';
 import {
   AuthResponse2,
+  refreshToken,
   tokenpayload,
   tokenpayload2,
 } from '../models/AuthResponse';
 import { Router } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { catchError, Observable, of } from 'rxjs';
+import { catchError, map, Observable, of } from 'rxjs';
 
 @Injectable({
   providedIn: 'root',
@@ -52,6 +53,7 @@ export class UsuariosService {
     this.CheckToken.set(false);
     console.log('boolen', this.checkToken());
     this._cookies.delete('token');
+    this._cookies.delete('refreshToken');
     this.router.navigate(['/login']);
   }
   setToken(data: any): void {
@@ -62,8 +64,6 @@ export class UsuariosService {
     let token = this._cookies.get('token');
     return token;
   }
-  //*Chequear si el token existe
-
   TokenDecoded2(token: string | unknown): Observable<tokenpayload2 | null> {
     const tokenStr = typeof token === 'string' ? token : '';
     return this.http
@@ -76,5 +76,33 @@ export class UsuariosService {
           return of(null);
         })
       );
+  }
+  verificarExpiracionToken(token: string): Observable<boolean> {
+    if (!token) return of(true); // Si no hay token, está "expirado"
+
+    return this.TokenDecoded2(token).pipe(
+      map((payload) => {
+        if (!payload?.expiracion) return true;
+
+        const expiracion = new Date(payload.expiracion).getTime();
+        const ahora = Date.now();
+        return ahora >= expiracion; // true si ya expiró
+      }),
+      catchError((err) => {
+        console.error('Error al verificar expiración del token:', err);
+        return of(true); // Si hay error, asumimos expirado
+      })
+    );
+  }
+
+  RefreshToken(): Observable<refreshToken> {
+    const refreshToken = this._cookies.get('refreshToken');
+    return this.http.post<refreshToken>(
+      `${this.URL}/RefreshToken/refresh`,
+      refreshToken,
+      {
+        headers: this.headers,
+      }
+    );
   }
 }

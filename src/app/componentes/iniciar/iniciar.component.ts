@@ -13,6 +13,7 @@ import { AuthResponse2 } from '../../core/models/AuthResponse';
 import { MessageService } from '../../core/services/message.service';
 import { Router } from '@angular/router';
 import { delay } from 'rxjs';
+import { CookieService } from 'ngx-cookie-service';
 
 @Component({
   selector: 'app-iniciar',
@@ -27,6 +28,7 @@ export class IniciarComponent {
   usuarios = inject(UsuariosService);
   router = inject(Router);
   msj = inject(MessageService);
+  private _cookies = inject(CookieService);
   public fb = inject(FormBuilder);
   //
   formbuild = this.fb.group({
@@ -49,6 +51,7 @@ export class IniciarComponent {
         next: (response: AuthResponse2) => {
           console.log('response', response);
           this.usuarios.setToken(response.data.token);
+          this._cookies.set('refreshToken', response.data.refreshToken);
           let message = JSON.stringify(response.message);
           // let tk = JSON.stringify(data.token);
           this.msj.success(message);

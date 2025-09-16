@@ -34,3 +34,7 @@ export interface tokenpayload2 {
   expiracion: Date;
   tiempoRestante: number;
 }
+export interface refreshToken {
+  token: string;
+  refreshToken: string;
+}

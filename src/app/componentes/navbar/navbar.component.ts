@@ -19,6 +19,7 @@ import { faBars } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { CommonModule, DatePipe } from '@angular/common';
 import { tokenpayload2 } from '@app/core/models/AuthResponse';
+import { MessageService } from '@app/core/services/message.service';
 
 @Component({
   selector: 'app-navbar',
@@ -33,9 +34,9 @@ export class NavbarComponent {
   faBars = faBars;
   //*Inject
   usuarios = inject(UsuariosService);
+  mensja=inject(MessageService)
 
   //*Observables
-  private tokenExpire = signal<number>(0);
   //*variables
   readonly fecha = signal<string>(new Date().toISOString());
   decodedToken = signal<tokenpayload2 | null>(null);
