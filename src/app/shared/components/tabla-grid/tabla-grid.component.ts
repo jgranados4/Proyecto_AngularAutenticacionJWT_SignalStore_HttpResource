@@ -14,11 +14,10 @@ import { delay } from 'rxjs';
 import { MessageService } from '../../../core/services/message.service';
 
 @Component({
-  selector: 'app-tabla-grid',
-  standalone: true,
-  imports: [AgGridAngular, CommonModule],
-  templateUrl: './tabla-grid.component.html',
-  styleUrl: './tabla-grid.component.css',
+    selector: 'app-tabla-grid',
+    imports: [AgGridAngular, CommonModule],
+    templateUrl: './tabla-grid.component.html',
+    styleUrl: './tabla-grid.component.css'
 })
 export class TablaGridComponent implements OnInit {
   rowDatassignal: WritableSignal<any[]> = signal([]);

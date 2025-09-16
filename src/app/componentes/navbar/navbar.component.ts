@@ -22,12 +22,11 @@ import { tokenpayload2 } from '@app/core/models/AuthResponse';
 import { MessageService } from '@app/core/services/message.service';
 
 @Component({
-  selector: 'app-navbar',
-  standalone: true,
-  imports: [RouterLink, FontAwesomeModule, CommonModule, DatePipe],
-  templateUrl: './navbar.component.html',
-  styleUrl: './navbar.component.css',
-  changeDetection: ChangeDetectionStrategy.OnPush,
+    selector: 'app-navbar',
+    imports: [RouterLink, FontAwesomeModule, CommonModule, DatePipe],
+    templateUrl: './navbar.component.html',
+    styleUrl: './navbar.component.css',
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class NavbarComponent {
   //icon

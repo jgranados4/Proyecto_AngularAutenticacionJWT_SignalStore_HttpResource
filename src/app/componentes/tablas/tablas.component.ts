@@ -22,11 +22,10 @@ import { faRepeat } from '@fortawesome/free-solid-svg-icons';
 import { TablaGridComponent } from '@shared/components/tabla-grid/tabla-grid.component';
 
 @Component({
-  selector: 'app-tablas',
-  standalone: true,
-  imports: [FormsModule, TablaGridComponent, CommonModule, FontAwesomeModule],
-  templateUrl: './tablas.component.html',
-  styleUrl: './tablas.component.css',
+    selector: 'app-tablas',
+    imports: [FormsModule, TablaGridComponent, CommonModule, FontAwesomeModule],
+    templateUrl: './tablas.component.html',
+    styleUrl: './tablas.component.css'
 })
 export class TablasComponent implements OnInit {
   //*Injections

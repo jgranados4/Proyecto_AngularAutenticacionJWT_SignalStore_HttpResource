@@ -16,11 +16,10 @@ import { delay } from 'rxjs';
 import { CookieService } from 'ngx-cookie-service';
 
 @Component({
-  selector: 'app-iniciar',
-  standalone: true,
-  imports: [NavbarComponent, ReactiveFormsModule],
-  templateUrl: './iniciar.component.html',
-  styleUrl: './iniciar.component.css',
+    selector: 'app-iniciar',
+    imports: [NavbarComponent, ReactiveFormsModule],
+    templateUrl: './iniciar.component.html',
+    styleUrl: './iniciar.component.css'
 })
 export class IniciarComponent {
   GetToken: string = '';

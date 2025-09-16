@@ -15,11 +15,10 @@ import { Router } from '@angular/router';
 import { ToastrService } from 'ngx-toastr';
 
 @Component({
-  selector: 'app-registrate',
-  standalone: true,
-  imports: [NavbarComponent, ReactiveFormsModule, JsonPipe],
-  templateUrl: './registrate.component.html',
-  styleUrl: './registrate.component.css',
+    selector: 'app-registrate',
+    imports: [NavbarComponent, ReactiveFormsModule, JsonPipe],
+    templateUrl: './registrate.component.html',
+    styleUrl: './registrate.component.css'
 })
 export class RegistrateComponent {
   messageBoolean: boolean = false;
