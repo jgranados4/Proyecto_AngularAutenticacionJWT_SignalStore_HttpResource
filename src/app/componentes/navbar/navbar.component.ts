@@ -22,76 +22,116 @@ import { tokenpayload2 } from '@app/core/models/AuthResponse';
 import { MessageService } from '@app/core/services/message.service';
 
 @Component({
-    selector: 'app-navbar',
-    imports: [RouterLink, FontAwesomeModule, CommonModule, DatePipe],
-    templateUrl: './navbar.component.html',
-    styleUrl: './navbar.component.css',
-    changeDetection: ChangeDetectionStrategy.OnPush
+  selector: 'app-navbar',
+  imports: [RouterLink, FontAwesomeModule, CommonModule, DatePipe],
+  templateUrl: './navbar.component.html',
+  styleUrl: './navbar.component.css',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class NavbarComponent {
   //icon
   faBars = faBars;
   //*Inject
   usuarios = inject(UsuariosService);
-  mensja=inject(MessageService)
+  mensja = inject(MessageService);
 
   //*Observables
   //*variables
   readonly fecha = signal<string>(new Date().toISOString());
-  decodedToken = signal<tokenpayload2 | null>(null);
   isAuthenticated = computed(() => this.usuarios.checkToken());
-  readonly tiempoRestanteToken = computed(() => {
-    const expiracionStr = this.decodedToken()?.expiracion;
-    this.fecha();
-    if (!expiracionStr) return null;
 
-    const expiracion = new Date(expiracionStr).getTime(); // en ms
-    const ahora = Date.now(); // en ms
-    const diferencia = expiracion - ahora;
+  // Computed para información completa del token
+  tokenInfo = computed(() => {
+    if (!this.usuarios.TokenDecoded2.hasValue()) {
+      return null;
+    }
 
-    return diferencia > 0 ? Math.floor(diferencia / 1000) : 0; // en segundos
+    const tokenData = this.usuarios.TokenDecoded2.value();
+    return {
+      id: tokenData.id,
+      email: tokenData?.email || '',
+      nombre: tokenData.nombre,
+      rol: tokenData?.rol || '',
+      expiracion: tokenData?.expiracion || '',
+      estaExpirado: this.isTokenExpired(),
+      tiempoRestante: this.calcularTiempoRestante(
+        typeof tokenData?.expiracion === 'string'
+          ? tokenData.expiracion
+          : tokenData?.expiracion instanceof Date
+          ? tokenData.expiracion.toISOString()
+          : undefined
+      ),
+    };
   });
 
-  readonly nombreUsuario = computed(() => this.decodedToken()?.nombre ?? '');
   isSidebarActive = signal<boolean>(false);
+  // Computed para verificar si el token está expirado
+  isTokenExpired = computed(() => {
+    // Verificar si el resource tiene valor
+    if (!this.usuarios.TokenDecoded2.hasValue()) {
+      return false; // No expirado si aún no tenemos datos
+    }
+    const tokenData = this.usuarios.TokenDecoded2.value();
+    if (!tokenData?.expiracion) {
+      return true; // Considerar expirado si no hay fecha
+    }
 
+    const expiracion = new Date(tokenData.expiracion).getTime();
+    const ahora = Date.now();
+    return ahora >= expiracion;
+  });
+  private calcularTiempoRestante(expiracion?: string): string {
+    if (!expiracion) return 'Desconocido';
+
+    try {
+      const expTimestamp = new Date(expiracion).getTime();
+      const ahora = Date.now();
+      const diferencia = expTimestamp - ahora;
+
+      if (diferencia <= 0) return 'Expirado';
+
+      const horas = Math.floor(diferencia / (1000 * 60 * 60));
+      const minutos = Math.floor((diferencia % (1000 * 60 * 60)) / (1000 * 60));
+
+      if (horas > 0) {
+        return `${horas}h ${minutos}m`;
+      } else {
+        return `${minutos}m`;
+      }
+    } catch {
+      return 'Error calculando';
+    }
+  }
   //*iniciar el componente
   constructor() {
     interval(1000).subscribe(() => {
       this.fecha.set(new Date().toISOString());
-      const segundosRestantes = this.tiempoRestanteToken();
+      const tiempoRestante = this.tokenInfo()?.tiempoRestante;
 
-      if (segundosRestantes !== null) {
-        console.log('Segundos restantes:', segundosRestantes);
+      if (tiempoRestante !== null && tiempoRestante !== undefined) {
+        console.log('Tiempo restante:', tiempoRestante);
 
-        if (segundosRestantes === 0) {
+        if (tiempoRestante === 'Expirado') {
           console.warn('Token expirado, cerrando sesión...');
           this.logout();
-        } else if (segundosRestantes <= 60) {
-          console.warn(
-            `¡Advertencia! El token expirará en ${segundosRestantes} segundos.`
-          );
+        } else if (typeof tiempoRestante === 'string') {
+          // Opcional: puedes extraer los minutos si el formato es "Xm" o "Xh Ym"
+          const minutosMatch = tiempoRestante.match(/(\d+)m/);
+          if (minutosMatch && parseInt(minutosMatch[1], 10) <= 1) {
+            console.warn(
+              `¡Advertencia! El token expirará en ${tiempoRestante}.`
+            );
+          }
         }
       }
     });
 
     effect(
       () => {
-        console.log('boolean', this.isAuthenticated());
-        if (this.isAuthenticated()) {
-          const token = this.usuarios.getToken();
-          this.usuarios.TokenDecoded2(token).subscribe({
-            next: (result) => {
-              if (result) {
-                this.decodedToken.set(result);
-                console.log('Token decodificado:', result);
-              } else {
-                console.warn('No se pudo decodificar el token.');
-              }
-            },
-            error: (err) => console.error('Error en la petición:', err),
-          });
-        }
+        // console.log('boolean', this.isAuthenticated());
+        // const token = this.usuarios.getToken();
+        // const usuario = this.usuarios.TokenDecoded2.value();
+        // console.log('data', usuario, 'token', token);
       },
       {
         allowSignalWrites: true,
@@ -101,16 +141,8 @@ export class NavbarComponent {
   toggleSidebar() {
     this.isSidebarActive.set(!this.isSidebarActive());
   }
-  formatearTiempoRestante(segundos: number): string {
-    const min = Math.floor(segundos / 60);
-    const sec = segundos % 60;
-    return `${min.toString().padStart(2, '0')}:${sec
-      .toString()
-      .padStart(2, '0')}`;
-  }
 
   logout(): void {
     this.usuarios.logout();
-    this.decodedToken.set(null);
   }
 }

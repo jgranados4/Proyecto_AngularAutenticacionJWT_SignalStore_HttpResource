@@ -20,13 +20,17 @@
         </div>
       </div>
       <p class="navbar-item">{{ fecha() | date : "medium" }}</p>
-      <p class="navbar-item">{{ decodedToken()?.expiracion }}</p>
+      <p class="navbar-item">
+        Fecha de Token Finalizar:{{
+          tokenInfo()?.expiracion | date : "dd/MM/yyyy HH:mm:ss"
+        }}
+      </p>
       <p class="navbar-item">
         Tiempo restante:
         {{
-          tiempoRestanteToken() !== null
-            ? formatearTiempoRestante(tiempoRestanteToken()!)
-            : "N/D"
+          tokenInfo()?.tiempoRestante != null
+            ? tokenInfo()?.tiempoRestante
+            : "SIN CAMBIOS"
         }}
       </p>
     </div>
@@ -43,8 +47,8 @@
             Iniciar sesión
           </a>
           }@else if(isAuthenticated()=== true) {
-          <p class="navbar-item">{{ decodedToken()?.nombre }}</p>
-          <p class="navbar-item">{{ decodedToken()?.rol }}</p>
+          <p class="navbar-item">{{ tokenInfo()?.nombre }}</p>
+          <p class="navbar-item">{{ tokenInfo()?.rol }}</p>
           <a
             class="button is-danger"
             (click)="logout()"
