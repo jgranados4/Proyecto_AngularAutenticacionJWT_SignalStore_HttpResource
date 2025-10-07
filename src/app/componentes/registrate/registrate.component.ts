@@ -13,17 +13,17 @@ import { delay } from 'rxjs';
 import { JsonPipe } from '@angular/common';
 import { Router } from '@angular/router';
 import { ToastrService } from 'ngx-toastr';
+import { UsuariosStoreService } from '@app/core/services/usuariosStore.service';
 
 @Component({
-    selector: 'app-registrate',
-    imports: [NavbarComponent, ReactiveFormsModule, JsonPipe],
-    templateUrl: './registrate.component.html',
-    styleUrl: './registrate.component.css'
+  selector: 'app-registrate',
+  imports: [NavbarComponent, ReactiveFormsModule, JsonPipe],
+  templateUrl: './registrate.component.html',
+  styleUrl: './registrate.component.css',
 })
 export class RegistrateComponent {
-  messageBoolean: boolean = false;
   //*inject
-  usuario = inject(UsuariosService);
+  usuario = inject(UsuariosStoreService);
   msj = inject(MessageService);
   router = inject(Router);
   fb = inject(FormBuilder);
@@ -31,9 +31,9 @@ export class RegistrateComponent {
   //*Formulario Reactivo
   formbuil = this.fb.group({
     nombre: ['', [Validators.required]],
-    constrasena: [
+    Contrasena: [
       '',
-      [Validators.required, Validators.minLength(4), Validators.maxLength(10)],
+      [Validators.required, Validators.minLength(4), Validators.maxLength(20)],
     ],
     email: ['', [Validators.required, Validators.email]],
     rol: ['', Validators.required],
@@ -42,22 +42,17 @@ export class RegistrateComponent {
   //*Registrar
   registrar() {
     const usuarioRegistrado = `Usuario: ${this.formbuil.value.nombre}\nCorreo: ${this.formbuil.value.email}\nTipo: ${this.formbuil.value.rol}`;
-    this.usuario
-      .PostUsuario(this.formbuil.value)
-      .pipe(delay(1000))
-      .subscribe({
-        next: (data) => {
-          console.log(data);
-          const message = 'Registro Exitoso';
-          this.msj.success(usuarioRegistrado, message);
-          this.messageBoolean = true;
-          setTimeout(() => {
-            this.router.navigateByUrl('/login');
-          }, 1000);
-        },
-        error: (error) => {
-          console.log(error);
-        },
-      });
+    this.usuario.crear(this.formbuil.value).subscribe({
+      next: (data) => {
+        const message = 'Registro Exitoso';
+        this.msj.success(usuarioRegistrado, message);
+        setTimeout(() => {
+          this.router.navigateByUrl('/login');
+        }, 1000);
+      },
+      error: (error) => {
+        console.log(error);
+      },
+    });
   }
 }

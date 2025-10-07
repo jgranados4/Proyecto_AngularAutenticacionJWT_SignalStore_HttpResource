@@ -1,6 +1,307 @@
+/* ===== ESTILOS PRINCIPALES DEL NAVBAR ===== */
+
 .navbar {
-  background-color: hsl(0, 0%, 4%);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
-.icon {
-  margin: 0 auto;
+
+.navbar-item.is-active {
+  background-color: black;
+  border-radius: 6px;
+}
+
+/* ===== SECCIÓN DEL PERFIL DE USUARIO ===== */
+.user-profile-section {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.5rem;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+}
+
+.user-card {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  min-width: 200px;
+}
+
+/* ===== AVATAR DEL USUARIO ===== */
+.user-avatar {
+  margin: 0 !important;
+}
+
+.avatar-circle {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: bold;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+}
+
+/* Colores por rol */
+.role-admin .avatar-circle {
+  background: linear-gradient(135deg, #dc3545, #c82333);
+}
+
+.role-user .avatar-circle {
+  background: linear-gradient(135deg, #007bff, #0056b3);
+}
+
+.role-guest .avatar-circle {
+  background: linear-gradient(135deg, #6c757d, #5a6268);
+}
+
+/* ===== DETALLES DEL USUARIO ===== */
+.user-details {
+  flex-grow: 1;
+  min-width: 0; /* Para truncar texto largo */
+}
+
+.user-name {
+  margin: 0;
+  color: #212529;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.user-role {
+  margin: 0.25rem 0 0 0;
+}
+
+/* ===== TAGS DE ROL ===== */
+.role-admin {
+  background-color: #dc3545 !important;
+  color: white !important;
+}
+
+.role-user {
+  background-color: #007bff !important;
+  color: white !important;
+}
+
+.role-guest {
+  background-color: #6c757d !important;
+  color: white !important;
+}
+
+/* ===== INDICADOR DE ESTADO DEL TOKEN ===== */
+.token-status-indicator {
+  display: flex;
+  align-items: center;
+}
+
+/* ===== ACCIONES DEL USUARIO ===== */
+.user-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* ===== TAGS DE TIEMPO Y EXPIRACIÓN ===== */
+.time-remaining-expired {
+  background-color: #dc3545 !important;
+  color: white !important;
+  animation: pulse-warning 1.5s infinite;
+}
+
+.time-remaining-warning {
+  background-color: #fd7e14 !important;
+  color: white !important;
+  animation: pulse-caution 2s infinite;
+}
+
+.time-remaining-normal {
+  background-color: #28a745 !important;
+  color: white !important;
+}
+
+/* Animaciones para alertas */
+@keyframes pulse-warning {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.05);
+  }
+}
+
+@keyframes pulse-caution {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+/* ===== ESTADOS DE TOKEN EN TAGS ===== */
+.token-status-valid .tag {
+  background-color: #28a745;
+  color: white;
+}
+
+.token-status-expired .tag {
+  background-color: #dc3545;
+  color: white;
+}
+
+.token-status-error .tag {
+  background-color: #fd7e14;
+  color: white;
+}
+
+.token-status-validating .tag {
+  background-color: #17a2b8;
+  color: white;
+}
+
+/* ===== EFECTOS HOVER ===== */
+.user-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  transition: all 0.2s ease;
+}
+
+.navbar-item:hover:not(.has-dropdown) {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  transition: background-color 0.2s ease;
+}
+
+/* ===== LOADING STATES ===== */
+.is-loading {
+  position: relative;
+}
+
+.is-loading::after {
+  animation: spinAround 500ms infinite linear;
+  border: 2px solid #dbdbdb;
+  border-radius: 290486px;
+  border-right-color: transparent;
+  border-top-color: transparent;
+  content: "";
+  display: block;
+  height: 1rem;
+  position: relative;
+  width: 1rem;
+  margin-left: 0.5rem;
+}
+
+@keyframes spinAround {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(359deg);
+  }
+}
+
+/* ===== RESPONSIVIDAD ===== */
+@media screen and (max-width: 1024px) {
+  .user-profile-section {
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: stretch;
+  }
+
+  .user-card {
+    min-width: auto;
+  }
+
+  .user-actions {
+    justify-content: center;
+  }
+}
+
+@media screen and (max-width: 768px) {
+  .navbar-item {
+    padding: 0.5rem 0.75rem;
+  }
+
+  .field.is-grouped .control {
+    margin-bottom: 0.5rem;
+  }
+
+  .user-profile-section {
+    padding: 0.25rem;
+    background: transparent;
+  }
+
+  .user-card {
+    flex-direction: column;
+    text-align: center;
+    gap: 0.5rem;
+  }
+
+  .user-name,
+  .user-role {
+    text-align: center;
+  }
+}
+
+/* ===== MEJORAS VISUALES ADICIONALES ===== */
+.icon-text {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.tags.has-addons {
+  margin-bottom: 0;
+}
+
+.navbar-dropdown {
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+/* ===== ESTADOS ESPECIALES ===== */
+.token-loading {
+  color: #17a2b8 !important;
+  font-style: italic;
+}
+
+.token-error {
+  color: #dc3545 !important;
+  font-weight: 600;
+}
+
+/* ===== TRANSICIONES SUAVES ===== */
+* {
+  transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+/* ===== DARK MODE SUPPORT ===== */
+@media (prefers-color-scheme: dark) {
+  .user-card {
+    background: rgba(33, 37, 41, 0.95);
+    color: white;
+  }
+
+  .user-name {
+    color: #f8f9fa;
+  }
+
+  .avatar-circle {
+    border: 2px solid rgba(255, 255, 255, 0.1);
+  }
 }

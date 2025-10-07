@@ -1,18 +1,12 @@
-export interface AuthResponse {
-  token?: token;
-  message?: string;
+export interface BackendStatus {
+  code: number;
+  description: string;
+  category: number;
 }
-export interface AuthResponse2 {
-  status: {
-    code: number;
-    description: string;
-    category: number;
-  };
-  message: string;
-  data: {
-    token: string;
-    refreshToken: string;
-  };
+export interface AuthResponse2<T = unknown> {
+  status: BackendStatus;
+  message: string | null;
+  data: T;
 }
 
 type token = string | null | undefined;
@@ -27,14 +21,19 @@ export interface tokenpayload {
 }
 type nombre = string | undefined | null;
 export interface tokenpayload2 {
-  id: number;
+  userId: number;
   nombre: string;
   email: string;
-  rol: string;
+  role: string;
   expiracion: Date;
   tiempoRestante: number;
 }
 export interface refreshToken {
+  token: string;
+  refreshToken: string;
+}
+
+export interface LoginData {
   token: string;
   refreshToken: string;
 }

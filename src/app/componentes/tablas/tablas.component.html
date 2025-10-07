@@ -1,4 +1,8 @@
-<!-- dropdown -->
+<!-- ============================================ -->
+<!-- 📁 tablas.component.html -->
+<!-- ============================================ -->
+
+<!-- ✅ Dropdown con signals -->
 <div class="dropdown is-hoverable">
   <div class="dropdown-trigger">
     <button class="button" aria-haspopup="true" aria-controls="dropdown-menu3">
@@ -10,97 +14,163 @@
   </div>
   <div class="dropdown-menu" id="dropdown-menu3" role="menu">
     <div class="dropdown-content">
-      <a class="dropdown-item" (click)="ScrollAll('tabla1')"> Forma 1 Tabla </a>
-      <a class="dropdown-item" (click)="ScrollAll('tabla2')"> Forma 2 Tabla </a>
+      <a class="dropdown-item" (click)="scrollATabla('tabla1')">
+        Forma 1 Tabla
+      </a>
       <hr class="dropdown-divider" />
-      <a href="#" class="dropdown-item"> More </a>
     </div>
   </div>
 </div>
-<!--  -->
-@if(tablas == 'tabla1'){
-<section class="table-container">
+
+<!-- ✅ Tabla condicional con @if -->
+@if(mostrarTabla()) {
+<section class="table-container" id="tabla1">
   <table class="table">
     <caption class="title is-2">
-      Tabla de Contenido
+      Tabla de Usuarios
     </caption>
+
     <thead>
       <tr>
         <th>Id</th>
-        <th><abbr title="Position">Nombre</abbr></th>
-        <th>Apellido</th>
-        <th>Estado</th>
-        <th style="text-align: center">Accion</th>
-        <span class="icon">
-          <fa-icon
-            [ngClass]="{ 'fa-beat': clickAni }"
-            (mouseenter)="clickAnimation()"
-            [icon]="faRepeat"
-            (click)="RecargarPagina()"
-          ></fa-icon>
-        </span>
+        <th><abbr title="Nombre">Nombre</abbr></th>
+        <th>Email</th>
+        <th>Rol</th>
+        <th style="text-align: center">
+          Acciones
+          <span class="icon">
+            <fa-icon
+              [ngClass]="{ 'fa-beat': clickAnimation() }"
+              (mouseenter)="activarAnimacion()"
+              [icon]="faRepeat"
+              (click)="recargar()"
+            ></fa-icon>
+          </span>
+        </th>
       </tr>
     </thead>
+
     <tbody>
-      @if (datosS() ) {@for (item of datosS(); track item.id) {
+      <!-- ✅ @let para obtener data del store -->
+      @let usuarios = store.usuarios();
+      <!-- ✅ @for con track optimizado -->
+      @defer (on idle) { @for (usuario of usuarios; track
+      trackByUsuarioId($index, usuario)) {
       <tr>
-        @if(isEditing == 'crear'){
-        <th>{{ item.id }}</th>
-        <th>{{ item.nombre }}</th>
-        <td>{{ item.apellido }}</td>
-        <td>{{ item.estado }}</td>
+        <!-- ✅ Modo lectura vs modo edición -->
+        @if (!estaEditando(usuario.id!)) {
+        <!-- Modo Lectura -->
+        <th>{{ usuario.id }}</th>
+        <td>{{ usuario.nombre }}</td>
+        <td>{{ usuario.email }}</td>
+        <td>{{ usuario.rol }}</td>
         <td>
-          <button class="button is-link" (click)="capturarContenido(item)">
+          <button
+            class="button is-link is-small"
+            (click)="iniciarEdicion(usuario)"
+            type="button"
+          >
             Editar
           </button>
-          <button class="button is-danger" (click)="Eliminar(item.id)">
+          <button
+            class="button is-danger is-small ml-2"
+            (click)="eliminar(usuario.id!)"
+            type="button"
+          >
             Borrar
           </button>
         </td>
-        }@else if (isEditing == 'editar') {
-        <th>{{ item.id }}</th>
-        <th>
-          <input class="input" type="text" [(ngModel)]="item.nombre" />
-        </th>
+        } @else {
+        <!-- Modo Edición con Reactive Forms -->
+        <th>{{ usuario.id }}</th>
         <td>
-          <input class="input" type="text" [(ngModel)]="item.apellido" />
+          <input
+            class="input is-small"
+            type="text"
+            [formControl]="editForm.controls.nombre"
+            [class.is-danger]="
+              editForm.controls.nombre.invalid &&
+              editForm.controls.nombre.touched
+            "
+          />
         </td>
         <td>
-          <input class="input" type="text" [(ngModel)]="item.estado" />
+          <input
+            class="input is-small"
+            type="email"
+            [formControl]="editForm.controls.email"
+            [class.is-danger]="
+              editForm.controls.email.invalid && editForm.controls.email.touched
+            "
+          />
         </td>
         <td>
-          <button class="button is-link" (click)="Editar(item.id, item)">
+          <input
+            class="input is-small"
+            type="text"
+            [formControl]="editForm.controls.rol"
+            [class.is-danger]="
+              editForm.controls.rol.invalid && editForm.controls.rol.touched
+            "
+          />
+        </td>
+        <td>
+          <button
+            class="button is-success is-small"
+            (click)="guardarEdicion(usuario.id!)"
+            [disabled]="editForm.invalid"
+            type="button"
+          >
             Guardar
           </button>
-          <button class="button is-danger" (click)="Cancelar()">
+          <button
+            class="button is-warning is-small ml-2"
+            (click)="cancelarEdicion()"
+            type="button"
+          >
             Cancelar
           </button>
         </td>
         }
       </tr>
       } @empty {
-      <h1>No hay Contenido</h1>
-      }}
+      <!-- ✅ Bloque @empty para lista vacía -->
       <tr>
-        <th>id</th>
-        <th>
-          <input class="input" type="text" [(ngModel)]="dataS().nombre" />
-        </th>
-        <td>
-          <input class="input" type="text" [(ngModel)]="dataS().apellido" />
-        </td>
-        <td>
-          <input class="input" type="text" [(ngModel)]="dataS().estado" />
+        <td colspan="5" class="has-text-centered">
+          <p class="has-text-grey">No hay usuarios registrados</p>
         </td>
       </tr>
+      } }@placeholder {
+      <h2>Cargando</h2>
+      }
     </tbody>
-    <!-- Crear contenido con un boton -->
-    <section>
-      <button class="button is-dark" (click)="crear()">Crear</button>
-      <button class="button is-danger" (click)="All()">Eliminar Todo</button>
-    </section>
+
+    <!-- ✅ Acciones globales -->
+    <tfoot>
+      <tr>
+        <td colspan="5">
+          <div class="buttons">
+            <button class="button is-info" (click)="recargar()" type="button">
+              <span class="icon">
+                <i class="fas fa-sync"></i>
+              </span>
+              <span>Recargar</span>
+            </button>
+
+            <button
+              class="button is-light"
+              (click)="volverHome()"
+              type="button"
+            >
+              <span class="icon">
+                <i class="fas fa-home"></i>
+              </span>
+              <span>Volver a Home</span>
+            </button>
+          </div>
+        </td>
+      </tr>
+    </tfoot>
   </table>
 </section>
-}@else if(tablas == 'tabla2'){
-<app-tabla-grid />
 }

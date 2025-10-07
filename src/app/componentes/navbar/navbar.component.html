@@ -1,62 +1,188 @@
-<nav class="navbar" role="navigation" aria-label="main navigation">
-  <!-- <div class="navbar-brand"></div> -->
+@let tokenInfo = usuarios.tokenInfo(); @let tokenStatus =
+usuarios.tokenStatus(); @let isLoading= usuarios.TokenDecoded2.isLoading();
+<nav class="navbar is-dark" role="navigation" aria-label="main navigation">
+  <div class="navbar-brand">
+    <div class="navbar-item">
+      <strong class="has-text-white">Mi Aplicación</strong>
+    </div>
+  </div>
+
   <div id="navbarBasicExample" class="navbar-menu">
     <div class="navbar-start">
-      <a class="navbar-item" [routerLink]="['/dashboard/Home']"> Home </a>
+      <a class="navbar-item" [routerLink]="['/dashboard/Home']">
+        <span class="icon-text">
+          <span class="icon">🏠</span>
+          <span>Home</span>
+        </span>
+      </a>
+
       <a
         class="navbar-item"
         [routerLink]="['/dashboard/Tablas']"
-        routerLinkActive="router-link-active"
+        routerLinkActive="is-active"
       >
-        Contenido
+        <span class="icon-text">
+          <span class="icon">📊</span>
+          <span>Contenido</span>
+        </span>
       </a>
 
       <div class="navbar-item has-dropdown is-hoverable">
-        <a class="navbar-link"> Mas </a>
-
+        <a class="navbar-link">
+          <span class="icon-text">
+            <span class="icon">⚙️</span>
+            <span>Más</span>
+          </span>
+        </a>
         <div class="navbar-dropdown">
-          <a class="navbar-item"> Contact </a>
+          <a class="navbar-item">Contact</a>
           <hr class="navbar-divider" />
+          <a class="navbar-item">Configuración</a>
         </div>
       </div>
-      <p class="navbar-item">{{ fecha() | date : "medium" }}</p>
-      <p class="navbar-item">
-        Fecha de Token Finalizar:{{
-          tokenInfo()?.expiracion | date : "dd/MM/yyyy HH:mm:ss"
-        }}
-      </p>
-      <p class="navbar-item">
-        Tiempo restante:
-        {{
-          tokenInfo()?.tiempoRestante != null
-            ? tokenInfo()?.tiempoRestante
-            : "SIN CAMBIOS"
-        }}
-      </p>
+    </div>
+
+    <!-- Información central del sistema -->
+    <div class="navbar-item">
+      <div class="field is-grouped is-grouped-multiline">
+        <div class="control">
+          <div class="tags has-addons">
+            <span class="tag is-dark">Fecha</span>
+            <span class="tag is-info">
+              {{ fecha() | date : "dd/MM/yyyy HH:mm:ss" }}
+            </span>
+          </div>
+        </div>
+
+        @if (tokenInfo) {
+        <div class="control">
+          <div class="tags has-addons">
+            <span class="tag is-dark">Expira</span>
+            <span
+              class="tag"
+              [class]="getExpirationTagClass(tokenInfo.estaExpirado)"
+            >
+              {{ tokenInfo.expiracion | date : "dd/MM HH:mm" }}
+            </span>
+          </div>
+        </div>
+
+        <div class="control">
+          <div class="tags has-addons">
+            <span class="tag is-dark">Restante</span>
+            <span
+              class="tag"
+              [class]="getTimeRemainingTagClass(tokenInfo.tiempoRestante)"
+            >
+              {{ tokenInfo.tiempoRestante || "Calculando..." }}
+            </span>
+          </div>
+        </div>
+        } @else if (tokenStatus === 'validating') {
+        <div class="control">
+          <span class="tag is-warning is-loading">Validando token...</span>
+        </div>
+        } @else if (tokenStatus === 'error') {
+        <div class="control">
+          <span class="tag is-danger">Error de validación</span>
+        </div>
+        }
+      </div>
     </div>
 
     <div class="navbar-end">
       <div class="navbar-item">
         <div class="buttons">
-          <!-- iniciar sesion -->
-          @if( isAuthenticated()=== false){
+          @if (!isAuthenticated()) {
+          <!-- Estado no autenticado -->
           <a class="button is-primary" [routerLink]="['/Registrar']">
-            <strong>Regístrate</strong>
+            <span class="icon">👤</span>
+            <span><strong>Regístrate</strong></span>
           </a>
           <a class="button is-light" [routerLink]="['/login']">
-            Iniciar sesión
-          </a>
-          }@else if(isAuthenticated()=== true) {
-          <p class="navbar-item">{{ tokenInfo()?.nombre }}</p>
-          <p class="navbar-item">{{ tokenInfo()?.rol }}</p>
-          <a
-            class="button is-danger"
-            (click)="logout()"
-            [routerLink]="['/login']"
-          >
-            Cerrar sesión
+            <span class="icon">🔐</span>
+            <span>Iniciar sesión</span>
           </a>
 
+          @if (tokenStatus === 'error') {
+          <button
+            class="button is-warning is-small"
+            (click)="refreshTokenData()"
+          >
+            <span class="icon">🔄</span>
+            <span>Reintentar</span>
+          </button>
+          } } @else {
+          <!-- Usuario autenticado -->
+          <div class="user-profile-section">
+            <!-- Card del usuario -->
+            <div class="user-card">
+              <figure class="image is-32x32 user-avatar">
+                <div class="avatar-circle" [class]="getRoleClass(userRole())">
+                  {{ getUserInitials() }}
+                </div>
+              </figure>
+
+              <div class="user-details">
+                <p class="user-name has-text-weight-semibold">
+                  {{ userDisplayName() }}
+                </p>
+                <p class="user-role">
+                  <span
+                    class="tag is-small"
+                    [class]="getRoleTagClass(userRole())"
+                  >
+                    {{ userRole() }}
+                  </span>
+                </p>
+              </div>
+
+              <!-- Estado del token visual -->
+              <div class="token-status-indicator">
+                @if (tokenInfo?.estaExpirado) {
+                <span class="tag is-danger is-small">
+                  <fa-icon [icon]="triangleexclamation"></fa-icon>
+                  <span>Expirado</span>
+                </span>
+                } @else if (tokenStatus === 'valid') {
+                <span class="tag is-success is-small">
+                  <fa-icon [icon]="check"></fa-icon>
+                  <span>Activo</span>
+                </span>
+                } @else if (tokenStatus === 'validating') {
+                <span class="tag is-warning is-small">
+                  <fa-icon [icon]="arrowsrotate"></fa-icon>
+                  <span>Validando</span>
+                </span>
+                }
+              </div>
+            </div>
+
+            <!-- Botones de acción -->
+            <div class="user-actions">
+              <button
+                class="button is-info is-small is-rounded"
+                (click)="refreshTokenData()"
+                [disabled]="isLoading"
+                title="Revalidar token"
+              >
+                @if (isLoading) {
+                <fa-icon [icon]="arrowsrotate"></fa-icon>
+                arrowsrotate } @else {
+                <fa-icon [icon]="rotateright"></fa-icon>
+                }
+              </button>
+
+              <a
+                class="button is-danger is-small"
+                (click)="logout()"
+                [routerLink]="['/login']"
+              >
+                <fa-icon [icon]="open"></fa-icon>
+                <span>Salir</span>
+              </a>
+            </div>
+          </div>
           }
         </div>
       </div>

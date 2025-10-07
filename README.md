@@ -31,4 +31,4 @@ Este proyecto es una aplicación web desarrollada con **Angular** que implementa
 
 ## 🖥️ Captura de pantalla - Interfaz principal
 
-![Demo de la aplicación](./src/assets/image.png)
+![Demo de aplicacion](./src/assets/mejora.png)

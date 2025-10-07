@@ -9,53 +9,54 @@ import {
 } from '@angular/forms';
 import { UsuariosService } from '@core/services/usuarios.service';
 import { Login } from '../../core/models/usuario';
-import { AuthResponse2 } from '../../core/models/AuthResponse';
+import { AuthResponse2, LoginData } from '../../core/models/AuthResponse';
 import { MessageService } from '../../core/services/message.service';
 import { Router } from '@angular/router';
 import { delay } from 'rxjs';
 import { CookieService } from 'ngx-cookie-service';
+import { SignalStoreService } from '@app/core/services/TokenStore.service';
 
 @Component({
-    selector: 'app-iniciar',
-    imports: [NavbarComponent, ReactiveFormsModule],
-    templateUrl: './iniciar.component.html',
-    styleUrl: './iniciar.component.css'
+  selector: 'app-iniciar',
+  imports: [NavbarComponent, ReactiveFormsModule],
+  templateUrl: './iniciar.component.html',
+  styleUrl: './iniciar.component.css',
 })
 export class IniciarComponent {
   GetToken: string = '';
   //*Inject
-  usuarios = inject(UsuariosService);
+  usuarios = inject(SignalStoreService);
+  auth = inject(UsuariosService);
   router = inject(Router);
   msj = inject(MessageService);
-  private _cookies = inject(CookieService);
   public fb = inject(FormBuilder);
   //
   formbuild = this.fb.group({
     email: ['', [Validators.required, Validators.email]],
     constrasena: [
       '',
-      [Validators.required, Validators.minLength(4), Validators.maxLength(10)],
+      [Validators.required, Validators.minLength(4), Validators.maxLength(20)],
     ],
   });
   login(): void {
     console.log('formualario', this.formbuild.value);
-    const login: Login<string> = {
+    const login: Login = {
       email: this.formbuild.value.email,
       constrasena: this.formbuild.value.constrasena,
     };
-    this.usuarios
+    this.auth
       .Login(login)
       .pipe(delay(1000))
       .subscribe({
-        next: (response: AuthResponse2) => {
+        next: (response: any) => {
           console.log('response', response);
-          this.usuarios.setToken(response.data.token);
-          this._cookies.set('refreshToken', response.data.refreshToken);
+          this.usuarios.setToken(
+            response.data.token,
+            response.data.refreshToken
+          );
+          this.usuarios.debugTokenState();
           let message = JSON.stringify(response.message);
-          // let tk = JSON.stringify(data.token);
           this.msj.success(message);
-          // this.GetToken = JSON.parse(tk);
-          // localStorage.setItem('token', this.GetToken);
           this.router.navigate(['/dashboard']);
 
           //recargar pagina con angular

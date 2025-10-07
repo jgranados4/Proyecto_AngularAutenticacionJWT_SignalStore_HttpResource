@@ -3,23 +3,31 @@ import {
   ChangeDetectorRef,
   Component,
   computed,
+  DestroyRef,
   effect,
-  EffectCleanupFn,
-  EffectRef,
   inject,
+  isDevMode,
   model,
   OnDestroy,
   OnInit,
   signal,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { UsuariosService } from '../../core/services/usuarios.service';
 import { interval } from 'rxjs';
-import { faBars } from '@fortawesome/free-solid-svg-icons';
+import {
+  faArrowsRotate,
+  faBars,
+  faCheck,
+  faDoorOpen,
+  faRotateRight,
+  faTriangleExclamation,
+} from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { CommonModule, DatePipe } from '@angular/common';
-import { tokenpayload2 } from '@app/core/models/AuthResponse';
 import { MessageService } from '@app/core/services/message.service';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { UsuariosService } from '@app/core/services';
+import { SignalStoreService } from '@app/core/services/TokenStore.service';
 
 @Component({
   selector: 'app-navbar',
@@ -30,113 +38,103 @@ import { MessageService } from '@app/core/services/message.service';
 })
 export class NavbarComponent {
   //icon
-  faBars = faBars;
+  open = faDoorOpen;
+  rotateright = faRotateRight;
+  arrowsrotate = faArrowsRotate;
+  triangleexclamation = faTriangleExclamation;
+  check=faCheck;
   //*Inject
-  usuarios = inject(UsuariosService);
+  usuarios = inject(SignalStoreService);
   mensja = inject(MessageService);
+  #ref = inject(DestroyRef);
 
   //*Observables
   //*variables
   readonly fecha = signal<string>(new Date().toISOString());
-  isAuthenticated = computed(() => this.usuarios.checkToken());
+  isAuthenticated = this.usuarios.isAuthenticated;
 
-  // Computed para información completa del token
-  tokenInfo = computed(() => {
-    if (!this.usuarios.TokenDecoded2.hasValue()) {
-      return null;
+  // Computed
+  // ✅ Método para forzar recarga del token
+  refreshTokenData(): void {
+    console.log('🔄 Recargando datos del token...');
+    this.usuarios.reloadTokenData();
+  }
+  // ✅ Computed para formatear información del usuario
+  userDisplayName = computed(() => {
+    const tokenInfo = this.usuarios.tokenInfo();
+    return tokenInfo?.nombre || 'Usuario';
+  });
+
+  // ✅ Computed para mostrar rol
+  userRole = computed(() => {
+    const tokenInfo = this.usuarios.tokenInfo();
+    return tokenInfo?.role || 'Sin rol';
+  });
+  // ✅ Computed para clase CSS del estado
+  tokenStatusClass = computed(() => {
+    const status = this.usuarios.tokenStatus();
+    return `token-status-${status}`;
+  });
+  // ✅ COMPUTED: Estado crítico del token (para alertas)
+  tokenCriticalState = computed(() => {
+    const tokenInfo = this.usuarios.tokenInfo();
+    const status = this.usuarios.tokenStatus();
+
+    if (!tokenInfo?.tiempoRestante) return null;
+
+    const timeRemaining = tokenInfo.tiempoRestante;
+
+    if (timeRemaining === 'Expirado') {
+      return {
+        type: 'expired',
+        message: 'Token expirado - cerrando sesión',
+        shouldLogout: true,
+      };
     }
 
-    const tokenData = this.usuarios.TokenDecoded2.value();
-    return {
-      id: tokenData.id,
-      email: tokenData?.email || '',
-      nombre: tokenData.nombre,
-      rol: tokenData?.rol || '',
-      expiracion: tokenData?.expiracion || '',
-      estaExpirado: this.isTokenExpired(),
-      tiempoRestante: this.calcularTiempoRestante(
-        typeof tokenData?.expiracion === 'string'
-          ? tokenData.expiracion
-          : tokenData?.expiracion instanceof Date
-          ? tokenData.expiracion.toISOString()
-          : undefined
-      ),
-    };
+    // Verificar advertencia de 1 minuto
+    const minutosMatch = timeRemaining.match(/(\d+)m/);
+    if (minutosMatch && parseInt(minutosMatch[1], 10) <= 1) {
+      return {
+        type: 'warning',
+        message: `Token expirará en ${timeRemaining}`,
+        shouldLogout: false,
+      };
+    }
+
+    return null;
   });
 
   isSidebarActive = signal<boolean>(false);
-  // Computed para verificar si el token está expirado
-  isTokenExpired = computed(() => {
-    // Verificar si el resource tiene valor
-    if (!this.usuarios.TokenDecoded2.hasValue()) {
-      return false; // No expirado si aún no tenemos datos
-    }
-    const tokenData = this.usuarios.TokenDecoded2.value();
-    if (!tokenData?.expiracion) {
-      return true; // Considerar expirado si no hay fecha
-    }
-
-    const expiracion = new Date(tokenData.expiracion).getTime();
-    const ahora = Date.now();
-    return ahora >= expiracion;
-  });
-  private calcularTiempoRestante(expiracion?: string): string {
-    if (!expiracion) return 'Desconocido';
-
-    try {
-      const expTimestamp = new Date(expiracion).getTime();
-      const ahora = Date.now();
-      const diferencia = expTimestamp - ahora;
-
-      if (diferencia <= 0) return 'Expirado';
-
-      const horas = Math.floor(diferencia / (1000 * 60 * 60));
-      const minutos = Math.floor((diferencia % (1000 * 60 * 60)) / (1000 * 60));
-
-      if (horas > 0) {
-        return `${horas}h ${minutos}m`;
-      } else {
-        return `${minutos}m`;
-      }
-    } catch {
-      return 'Error calculando';
-    }
-  }
-  //*iniciar el componente
   constructor() {
-    interval(1000).subscribe(() => {
-      this.fecha.set(new Date().toISOString());
-      const tiempoRestante = this.tokenInfo()?.tiempoRestante;
+    effect(() => {
+      const criticalState = this.tokenCriticalState();
 
-      if (tiempoRestante !== null && tiempoRestante !== undefined) {
-        console.log('Tiempo restante:', tiempoRestante);
+      if (!criticalState) return;
 
-        if (tiempoRestante === 'Expirado') {
-          console.warn('Token expirado, cerrando sesión...');
-          this.logout();
-        } else if (typeof tiempoRestante === 'string') {
-          // Opcional: puedes extraer los minutos si el formato es "Xm" o "Xh Ym"
-          const minutosMatch = tiempoRestante.match(/(\d+)m/);
-          if (minutosMatch && parseInt(minutosMatch[1], 10) <= 1) {
-            console.warn(
-              `¡Advertencia! El token expirará en ${tiempoRestante}.`
-            );
-          }
-        }
+      if (criticalState.shouldLogout) {
+        console.warn('🚨 Token expirado - cerrando sesión automáticamente');
+        this.logout();
+        return;
+      }
+
+      if (criticalState.type === 'warning') {
+        console.warn(`⚠️ ${criticalState.message}`);
+        this, this.mensja.warning(criticalState.message);
       }
     });
-
-    effect(
-      () => {
-        // console.log('boolean', this.isAuthenticated());
-        // const token = this.usuarios.getToken();
-        // const usuario = this.usuarios.TokenDecoded2.value();
-        // console.log('data', usuario, 'token', token);
-      },
-      {
-        allowSignalWrites: true,
-      }
-    );
+    // ✅ Effect para debugging (solo en desarrollo)
+    if (this.isDevMode()) {
+      effect(() => {
+        this.usuarios.debugTokenState();
+        console.log('contenido', this.usuarios.tokenInfo());
+      });
+    }
+    interval(1000)
+      .pipe(takeUntilDestroyed(this.#ref))
+      .subscribe(() => {
+        this.fecha.set(new Date().toISOString());
+      });
   }
   toggleSidebar() {
     this.isSidebarActive.set(!this.isSidebarActive());
@@ -144,5 +142,53 @@ export class NavbarComponent {
 
   logout(): void {
     this.usuarios.logout();
+  }
+
+  // ✅ Método para obtener clase CSS del rol
+  getRoleClass(role?: string): string {
+    if (!role) return 'role-guest';
+
+    const roleLower = role.toLowerCase();
+
+    if (roleLower.includes('admin')) return 'role-admin';
+    if (roleLower.includes('user') || roleLower.includes('usuario'))
+      return 'role-user';
+
+    return 'role-guest';
+  }
+  private isDevMode(): boolean {
+    return isDevMode();
+  }
+  getUserInitials(): string {
+    const nombre = this.userDisplayName();
+    return nombre
+      .split(' ')
+      .map((word) => word.charAt(0).toUpperCase())
+      .slice(0, 2)
+      .join('');
+  }
+  getExpirationTagClass(isExpired: boolean): string {
+    return isExpired ? 'is-danger' : 'is-success';
+  }
+  getTimeRemainingTagClass(timeRemaining?: string): string {
+    if (!timeRemaining) return 'is-info';
+    if (timeRemaining === 'Expirado') return 'is-danger';
+
+    const minutosMatch = timeRemaining.match(/(\d+)m/);
+    if (minutosMatch && parseInt(minutosMatch[1], 10) <= 5) {
+      return 'is-warning';
+    }
+
+    return 'is-success';
+  }
+  getRoleTagClass(role?: string): string {
+    if (!role) return 'is-light';
+
+    const roleLower = role.toLowerCase();
+
+    if (roleLower.includes('admin')) return 'is-danger';
+    if (roleLower.includes('user')) return 'is-primary';
+
+    return 'is-light';
   }
 }

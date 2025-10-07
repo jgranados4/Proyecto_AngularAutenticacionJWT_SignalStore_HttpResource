@@ -4,9 +4,22 @@ import { IniciarComponent } from './componentes/iniciar/iniciar.component';
 import { authGuard } from './core/guards/auth.guard';
 
 export const routes: Routes = [
-  { path: 'Registrar', component: RegistrateComponent },
-  { path: 'login', component: IniciarComponent },
-  { path: '', redirectTo: '/login', pathMatch: 'full' },
+  {
+    path: 'Registrar',
+    loadComponent: () =>
+      import('./componentes/registrate/registrate.component').then(
+        (m) => m.RegistrateComponent
+      ),
+    title: 'Registro',
+  },
+  {
+    path: 'login',
+    loadComponent: () =>
+      import('./componentes/iniciar/iniciar.component').then(
+        (m) => m.IniciarComponent
+      ),
+    title: 'Iniciar Sesión',
+  },
   {
     path: 'dashboard',
     canActivate: [authGuard],
@@ -28,4 +41,5 @@ export const routes: Routes = [
       },
     ],
   },
+  { path: '', redirectTo: '/login', pathMatch: 'full' },
 ];
