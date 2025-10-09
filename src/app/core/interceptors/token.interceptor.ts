@@ -6,187 +6,250 @@ import {
   HttpRequest,
 } from '@angular/common/http';
 import { inject } from '@angular/core';
-import { UsuariosService } from '../services/usuarios.service';
-import { catchError, finalize, Observable, switchMap, throwError } from 'rxjs';
-import { refreshToken } from '../models/AuthResponse';
-import { CookieService } from 'ngx-cookie-service';
 import { Router } from '@angular/router';
+import {
+  catchError,
+  finalize,
+  Observable,
+  switchMap,
+  throwError,
+  timer,
+  retry,
+  first,
+} from 'rxjs';
+import { UsuariosService } from '../services/usuarios.service';
 import { SignalStoreService } from '../services/TokenStore.service';
+import { refreshToken } from '../models/AuthResponse';
 
-// ✅ Flag global para evitar múltiples refresh simultáneos
-let isRefreshing = false;
+// Control de refresh simultáneos
+class RefreshTokenState {
+  private static isRefreshing = false;
+  private static lastRefreshAttempt = 0;
+  private static readonly REFRESH_COOLDOWN = 5000;
 
-export const tokenInterceptor: HttpInterceptorFn = (req, next) => {
-  const cookies = inject(CookieService);
-  const usuarios = inject(SignalStoreService);
-  const refrescar = inject(UsuariosService);
-  const router = inject(Router);
-  const token = usuarios.currentToken();
-
-  // 🔥 ENDPOINTS PÚBLICOS (sin autenticación)
-  const publicEndpoints = [
-    '/auth/login',
-    '/auth/register',
-    '/UsuarioAUs/login',
-    '/UsuarioAUs/register',
-    '/login',
-    '/register',
-    '/DecodeToken',
-    '/RefreshToken',
-  ];
-
-  // ✅ Verificar si es endpoint público
-  const isPublicEndpoint = publicEndpoints.some((endpoint) =>
-    req.url.includes(endpoint)
-  );
-
-  console.log(`📡 Request: ${req.method} ${req.url}`);
-  console.log(`🔍 Es público: ${isPublicEndpoint}`);
-
-  // ✅ 1. ENDPOINTS PÚBLICOS - Pasan sin modificación
-  if (isPublicEndpoint) {
-    console.log(`✅ Endpoint público permitido`);
-    return next(req);
-  }
-
-  // ✅ 2. ENDPOINTS PROTEGIDOS - Requieren token válido
-  console.log(`🔐 Endpoint protegido - Validando token`);
-
-  // Verificar existencia del token
-  if (!token || token.trim() === '') {
-    console.error(`🚫 Token no encontrado`);
-    usuarios.logout();
-    router.navigate(['/login']);
-    return throwError(
-      () =>
-        new HttpErrorResponse({
-          status: 401,
-          statusText: 'No autorizado - Token no encontrado',
-          url: req.url,
-        })
+  static canRefresh(): boolean {
+    const now = Date.now();
+    return (
+      !this.isRefreshing &&
+      now - this.lastRefreshAttempt > this.REFRESH_COOLDOWN
     );
   }
 
-  // Verificar estado del token
-  const tokenStatus = usuarios.tokenStatus();
-  console.log(`📊 Estado del token: ${tokenStatus}`);
-
-  // Si el token está expirado, intentar refresh antes de hacer la petición
-  if (tokenStatus === 'expired') {
-    console.warn(`⏰ Token expirado - Iniciando refresh`);
-
-    if (!isRefreshing) {
-      return handleTokenRefresh(req, next, usuarios, refrescar, router);
-    } else {
-      // Si ya está refreshing, esperar y reintentar
-      console.log(`⏳ Refresh en progreso, reintentando...`);
-      return throwError(
-        () =>
-          new HttpErrorResponse({
-            status: 401,
-            statusText: 'Token refresh en progreso',
-          })
-      );
-    }
+  static startRefresh(): void {
+    this.isRefreshing = true;
+    this.lastRefreshAttempt = Date.now();
   }
 
-  // ✅ Clonar request con Authorization header
-  const clonedReq = req.clone({
-    setHeaders: {
-      Authorization: `Bearer ${token}`,
-    },
+  static endRefresh(): void {
+    this.isRefreshing = false;
+  }
+
+  static isCurrentlyRefreshing(): boolean {
+    return this.isRefreshing;
+  }
+}
+
+const PUBLIC_ENDPOINTS = [
+  '/auth/login',
+  '/auth/register',
+  '/UsuarioAUs/login',
+  '/UsuarioAUs/register',
+  '/login',
+  '/register',
+  '/DecodeToken',
+  '/RefreshToken',
+  '/public/',
+];
+
+const isPublicEndpoint = (url: string): boolean =>
+  PUBLIC_ENDPOINTS.some((endpoint) => url.includes(endpoint));
+
+const createAuthError = (message: string, url: string): HttpErrorResponse =>
+  new HttpErrorResponse({
+    status: 401,
+    statusText: 'No autorizado',
+    error: { message },
+    url,
   });
 
-  console.log(`🚀 Enviando request con token`);
+const redirectToLogin = (
+  tokenStore: SignalStoreService,
+  router: Router
+): void => {
+  tokenStore.logout();
+  router.navigate(['/login'], { queryParams: { returnUrl: router.url } });
+};
 
-  // ✅ Ejecutar request y manejar errores 401
+const showAlert = (message: string): void => {
+  if (typeof window !== 'undefined') alert(message);
+};
+
+export const tokenInterceptor: HttpInterceptorFn = (req, next) => {
+  const tokenStore = inject(SignalStoreService);
+  const router = inject(Router);
+
+  // Endpoints públicos pasan directo
+  if (isPublicEndpoint(req.url)) return next(req);
+
+  const token = tokenStore.currentToken();
+  const tokenStatus = tokenStore.tokenStatus();
+
+  // Sin token → Login
+  if (!token || tokenStatus === 'no-token') {
+    console.error('🚫 Token no encontrado');
+    redirectToLogin(tokenStore, router);
+    return throwError(() => createAuthError('Token no encontrado', req.url));
+  }
+
+  // Token expirado → Refresh preventivo
+  if (tokenStatus === 'expired') {
+    console.warn('⏰ Token expirado - Refresh preventivo');
+    return handleTokenRefresh(req, next, tokenStore, router);
+  }
+
+  // Token validando → Esperar hasta 2s
+  if (tokenStatus === 'validating') {
+    console.log('⏳ Esperando validación...');
+    let attempts = 0;
+    const maxAttempts = 4;
+
+    return timer(0, 500).pipe(
+      switchMap(() => {
+        attempts++;
+        const newStatus = tokenStore.tokenStatus();
+
+        if (newStatus === 'valid') {
+          console.log('✅ Token validado');
+          return executeRequest(req, next, tokenStore, router);
+        }
+
+        if (newStatus === 'expired') {
+          return handleTokenRefresh(req, next, tokenStore, router);
+        }
+
+        if (newStatus === 'error' || newStatus === 'no-token') {
+          console.error(`❌ Error en validación: ${newStatus}`);
+          redirectToLogin(tokenStore, router);
+          return throwError(() => createAuthError('Token inválido', req.url));
+        }
+
+        if (attempts >= maxAttempts) {
+          console.error('⏱️ Timeout validación');
+          redirectToLogin(tokenStore, router);
+          return throwError(() =>
+            createAuthError('Timeout validando token', req.url)
+          );
+        }
+
+        return throwError(() => new Error('CONTINUE_WAITING'));
+      }),
+      catchError((error) =>
+        error.message === 'CONTINUE_WAITING'
+          ? throwError(() => error)
+          : throwError(() => error)
+      ),
+      first((result: any) => result !== undefined)
+    );
+  }
+
+  // Token con error → Login
+  if (tokenStatus === 'error') {
+    console.error('❌ Token con error de validación');
+    redirectToLogin(tokenStore, router);
+    return throwError(() => createAuthError('Token inválido', req.url));
+  }
+
+  // Token válido → Ejecutar request
+  return executeRequest(req, next, tokenStore, router);
+};
+
+function executeRequest(
+  req: HttpRequest<unknown>,
+  next: HttpHandlerFn,
+  tokenStore: SignalStoreService,
+  router: Router
+): Observable<HttpEvent<unknown>> {
+  const clonedReq = req.clone({
+    setHeaders: { Authorization: `Bearer ${tokenStore.currentToken()}` },
+  });
+
   return next(clonedReq).pipe(
     catchError((error: HttpErrorResponse) => {
-      console.error(`❌ Error ${error.status}: ${error.message}`);
-
-      // Solo intentar refresh en errores 401 y si no estamos ya refreshing
-      if (error.status === 401 && !isRefreshing) {
-        console.warn(`🔄 Error 401 - Intentando refresh token`);
-        return handleTokenRefresh(req, next, usuarios, refrescar, router);
+      if (error.status === 401 && RefreshTokenState.canRefresh()) {
+        console.warn('🔄 Error 401 - Intentando refresh');
+        return handleTokenRefresh(req, next, tokenStore, router);
       }
-
-      // Para otros errores o si ya estamos refreshing, propagar error
       return throwError(() => error);
     })
   );
-};
+}
 
-/**
- * 🔄 Maneja el refresh del token de forma centralizada
- */
 function handleTokenRefresh(
   originalReq: HttpRequest<unknown>,
   next: HttpHandlerFn,
-  usuarios: SignalStoreService,
-  refrescar: UsuariosService,
+  tokenStore: SignalStoreService,
   router: Router
 ): Observable<HttpEvent<unknown>> {
-  console.log(`🔄 Iniciando proceso de refresh token`);
-  isRefreshing = true;
-  const refreshTokenValue = usuarios.currentRefreshToken();
-
-  if (!refreshTokenValue || refreshTokenValue.trim() === '') {
-    console.error(`❌ Refresh token no encontrado en cookies`);
-    isRefreshing = false;
-    usuarios.logout();
-    router.navigate(['/login']);
-    return throwError(
-      () =>
-        new HttpErrorResponse({
-          status: 401,
-          statusText: 'Refresh token no disponible',
-        })
+  if (RefreshTokenState.isCurrentlyRefreshing()) {
+    console.log('⏳ Refresh en progreso');
+    return throwError(() =>
+      createAuthError('Refresh en progreso', originalReq.url)
     );
   }
 
-  console.log(`✅ Refresh token encontrado, llamando endpoint...`);
+  const refreshTokenValue = tokenStore.currentRefreshToken();
+  if (!refreshTokenValue?.trim()) {
+    console.error('❌ Refresh token no disponible');
+    redirectToLogin(tokenStore, router);
+    return throwError(() =>
+      createAuthError('Refresh token no disponible', originalReq.url)
+    );
+  }
 
-  // Llamar al endpoint de refresh
-  return refrescar.RefreshToken().pipe(
+  console.log('🔄 Iniciando refresh token');
+  RefreshTokenState.startRefresh();
+
+  const usuariosService = inject(UsuariosService);
+
+  return usuariosService.RefreshToken().pipe(
+    retry({
+      count: 2,
+      delay: (error: HttpErrorResponse, retryCount) => {
+        console.warn(`⚠️ Retry ${retryCount}`);
+        return timer(1000 * retryCount);
+      },
+    }),
     switchMap((resp: refreshToken) => {
-      console.log(`✅ Token refreshed exitosamente`);
-      // Actualizar tokens
-      usuarios.updateToken(resp.token);
-      usuarios.updateRefreshToken(resp.refreshToken);
-      console.log(`🔄 Reintentando request original con nuevo token`);
+      console.log('✅ Token refreshed');
+      tokenStore.updateToken(resp.token);
+      tokenStore.updateRefreshToken(resp.refreshToken);
 
-      // Reintentar request original con nuevo token
       const retryReq = originalReq.clone({
-        setHeaders: {
-          Authorization: `Bearer ${resp.token}`,
-        },
+        setHeaders: { Authorization: `Bearer ${resp.token}` },
       });
 
       return next(retryReq);
     }),
     catchError((refreshError: HttpErrorResponse) => {
-      console.error(`❌ Refresh token falló:`, refreshError);
+      console.error('❌ Refresh falló');
 
-      // Manejar caso de tokens revocados
       if (refreshError.status === 401) {
         const errorMsg = refreshError.error?.message || '';
-
-        if (errorMsg.includes('revocados') || errorMsg.includes('inválido')) {
-          alert(
-            '🚨 Tu sesión ha expirado o fue revocada. Por favor, inicia sesión nuevamente.'
-          );
+        if (errorMsg.includes('revocado') || errorMsg.includes('inválido')) {
+          showAlert('🚨 Sesión expirada. Inicia sesión nuevamente.');
+        } else {
+          showAlert('⚠️ Sesión inválida. Redirigiendo...');
         }
+      } else if (refreshError.status === 0) {
+        showAlert('❌ Error de conexión. Verifica tu internet.');
       }
 
-      // Limpiar estado y redirigir a login
-      usuarios.logout();
-      router.navigate(['/login']);
-
+      redirectToLogin(tokenStore, router);
       return throwError(() => refreshError);
     }),
     finalize(() => {
-      console.log(`🏁 Finalizando proceso de refresh`);
-      isRefreshing = false;
+      console.log('🏁 Finalizando refresh');
+      RefreshTokenState.endRefresh();
     })
   );
 }
