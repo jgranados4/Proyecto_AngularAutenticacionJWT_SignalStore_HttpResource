@@ -32,7 +32,6 @@ const PUBLIC_ENDPOINTS = [
   '/register',
   '/DecodeToken',
   '/RefreshToken',
-  '/api/UsuarioAUs',
   '/public/',
 ];
 
@@ -153,13 +152,6 @@ function handleTokenRefresh(
 
   // Llamar al endpoint de refresh con retry
   return usuariosService.RefreshToken().pipe(
-    retry({
-      count: 2,
-      delay: (error: HttpErrorResponse, retryCount) => {
-        console.warn(`⚠️ Retry ${retryCount} del refresh`);
-        return timer(1000 * retryCount);
-      },
-    }),
     switchMap((resp: refreshToken) => {
       console.log(`✅ Token refreshed exitosamente`);
 
@@ -186,18 +178,11 @@ function handleTokenRefresh(
         const errorMsg = refreshError.error?.message || '';
 
         if (errorMsg.includes('revocado') || errorMsg.includes('inválido')) {
-          if (typeof window !== 'undefined') {
-            alert(
-              '🚨 Tu sesión ha expirado o fue revocada. Por favor, inicia sesión nuevamente.'
-            );
-          }
-        }
-      } else if (refreshError.status === 0) {
-        if (typeof window !== 'undefined') {
-          alert('❌ Error de conexión. Verifica tu internet.');
+          alert(
+            '🚨 Tu sesión ha expirado o fue revocada. Por favor, inicia sesión nuevamente.'
+          );
         }
       }
-
       // Limpiar estado y redirigir a login
       tokenStore.logout();
       router.navigate(['/login']);

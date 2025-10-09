@@ -2,28 +2,6 @@
 <!-- 📁 tablas.component.html -->
 <!-- ============================================ -->
 
-<!-- ✅ Dropdown con signals -->
-<div class="dropdown is-hoverable">
-  <div class="dropdown-trigger">
-    <button class="button" aria-haspopup="true" aria-controls="dropdown-menu3">
-      <span>Seleccionar Contenido</span>
-      <span class="icon is-small">
-        <i class="fas fa-angle-down" aria-hidden="true"></i>
-      </span>
-    </button>
-  </div>
-  <div class="dropdown-menu" id="dropdown-menu3" role="menu">
-    <div class="dropdown-content">
-      <a class="dropdown-item" (click)="scrollATabla('tabla1')">
-        Forma 1 Tabla
-      </a>
-      <hr class="dropdown-divider" />
-    </div>
-  </div>
-</div>
-
-<!-- ✅ Tabla condicional con @if -->
-@if(mostrarTabla()) {
 <section class="table-container" id="tabla1">
   <table class="table">
     <caption class="title is-2">
@@ -54,8 +32,7 @@
       <!-- ✅ @let para obtener data del store -->
       @let usuarios = store.usuarios();
       <!-- ✅ @for con track optimizado -->
-      @defer (on idle) { @for (usuario of usuarios; track
-      trackByUsuarioId($index, usuario)) {
+      @for (usuario of usuarios; track trackByUsuarioId($index, usuario)) {
       <tr>
         <!-- ✅ Modo lectura vs modo edición -->
         @if (!estaEditando(usuario.id!)) {
@@ -140,8 +117,6 @@
           <p class="has-text-grey">No hay usuarios registrados</p>
         </td>
       </tr>
-      } }@placeholder {
-      <h2>Cargando</h2>
       }
     </tbody>
 
@@ -173,4 +148,3 @@
     </tfoot>
   </table>
 </section>
-}

@@ -20,10 +20,14 @@ export class SignalStoreService {
   /**
    * ✅ Inicializa desde cookies de forma segura
    */
-  private readonly stateSignal = signal<string>(this.getTokenFromCookie());
-
+  private readonly stateSignal = signal<string>(
+    this.cookies.get(this.TOKEN_KEY) || ''
+  );
+  /**
+   * RefreshToken (privado)
+   */
   private readonly refreshTokenSignal = signal<string>(
-    this.getRefreshTokenFromCookie()
+    this.cookies.get(this.REFRESH_TOKEN_KEY) || ''
   );
 
   //* ==================== SIGNALS PÚBLICOS ====================
@@ -41,14 +45,13 @@ export class SignalStoreService {
   TokenDecoded2 = this.HttpResource.get<AuthResponse2<tokenpayload2>>({
     url: `${this.URL}/UsuarioAUs/DecodeToken`,
     params: () => {
-      const token = this.stateSignal();
+      const token = this.currentToken();
       // Solo hacer request si hay token válido (no vacío)
       return token && token.trim() ? { token } : undefined;
     },
   });
 
   //* ==================== COMPUTED SIGNALS DERIVADOS ====================
-
   /**
    * ✅ OPTIMIZADO: Token status con manejo correcto de todos los estados
    */
@@ -68,12 +71,13 @@ export class SignalStoreService {
     }
 
     // 3️⃣ Cargando SOLO si no hay valor previo
-    if (this.TokenDecoded2.isLoading() && !this.TokenDecoded2.hasValue()) {
+    if (this.TokenDecoded2.isLoading()) {
       return 'validating';
     }
 
     // 4️⃣ Error en la decodificación
     if (this.TokenDecoded2.error()) {
+      this.logout();
       console.error(
         '❌ Error decodificando token:',
         this.TokenDecoded2.error()
@@ -193,7 +197,6 @@ export class SignalStoreService {
   }
 
   //* ==================== MÉTODOS DE MUTACIÓN ====================
-
   /**
    * ✅ Establece nuevo token + refreshToken
    * Persiste en cookies de forma segura
@@ -213,7 +216,7 @@ export class SignalStoreService {
       path: '/',
       secure: environment.production, // Solo HTTPS en producción
       sameSite: 'Strict',
-      expires: 7, // 7 días
+      expires: 0.0208, // 7 días
     });
 
     console.log('✅ Token guardado');
@@ -239,7 +242,7 @@ export class SignalStoreService {
       path: '/',
       secure: environment.production,
       sameSite: 'Strict',
-      expires: 7,
+      expires: 0.0208,
     });
 
     console.log('✅ Token actualizado');
@@ -260,7 +263,7 @@ export class SignalStoreService {
       path: '/',
       secure: environment.production,
       sameSite: 'Strict',
-      expires: 30, // 30 días
+      expires: 7,
     });
 
     console.log('✅ Refresh token actualizado');
@@ -300,32 +303,6 @@ export class SignalStoreService {
   }
 
   //* ==================== HELPERS PRIVADOS ====================
-
-  /**
-   * ✅ Obtiene token desde cookie de forma segura
-   */
-  private getTokenFromCookie(): string {
-    try {
-      const token = this.cookies.get(this.TOKEN_KEY);
-      return token && token.trim() ? token : '';
-    } catch (error) {
-      console.error('❌ Error leyendo token desde cookie:', error);
-      return '';
-    }
-  }
-
-  /**
-   * ✅ Obtiene refresh token desde cookie de forma segura
-   */
-  private getRefreshTokenFromCookie(): string {
-    try {
-      const refreshToken = this.cookies.get(this.REFRESH_TOKEN_KEY);
-      return refreshToken && refreshToken.trim() ? refreshToken : '';
-    } catch (error) {
-      console.error('❌ Error leyendo refresh token desde cookie:', error);
-      return '';
-    }
-  }
 
   /**
    * ✅ Calcula tiempo restante en formato legible
