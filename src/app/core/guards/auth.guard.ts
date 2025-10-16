@@ -90,7 +90,7 @@ function attemptTokenRefresh(
 ): Observable<boolean> {
   console.log('🔄 Intentando refresh en guard');
 
-  return usuariosService.RefreshToken().pipe(
+  return tokenStore.RefreshToken().pipe(
     switchMap((refreshResponse) => {
       tokenStore.updateToken(refreshResponse.token);
       tokenStore.updateRefreshToken(refreshResponse.refreshToken);

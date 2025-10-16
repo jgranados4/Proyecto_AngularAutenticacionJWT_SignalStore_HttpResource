@@ -41,6 +41,7 @@ const isPublicEndpoint = (url: string): boolean =>
 export const tokenInterceptor: HttpInterceptorFn = (req, next) => {
   const tokenStore = inject(SignalStoreService);
   const router = inject(Router);
+  const usuariosService = inject(UsuariosService);
 
   console.log(`📡 Request: ${req.method} ${req.url}`);
 
@@ -56,7 +57,7 @@ export const tokenInterceptor: HttpInterceptorFn = (req, next) => {
   const token = tokenStore.currentToken();
 
   // Verificar existencia del token
-  if (!token || token.trim() === '') {
+  if (!token) {
     console.error(`🚫 Token no encontrado`);
     tokenStore.logout();
     router.navigate(['/login']);
@@ -79,7 +80,7 @@ export const tokenInterceptor: HttpInterceptorFn = (req, next) => {
     console.warn(`⏰ Token expirado - Iniciando refresh`);
 
     if (!isRefreshing) {
-      return handleTokenRefresh(req, next, tokenStore, router);
+      return handleTokenRefresh(req, next, tokenStore, router, usuariosService);
     } else {
       console.log(`⏳ Refresh en progreso, reintentando...`);
       return throwError(
@@ -109,7 +110,13 @@ export const tokenInterceptor: HttpInterceptorFn = (req, next) => {
       // Solo intentar refresh en errores 401 y si no estamos ya refreshing
       if (error.status === 401 && !isRefreshing) {
         console.warn(`🔄 Error 401 - Intentando refresh token`);
-        return handleTokenRefresh(req, next, tokenStore, router);
+        return handleTokenRefresh(
+          req,
+          next,
+          tokenStore,
+          router,
+          usuariosService
+        );
       }
 
       // Para otros errores o si ya estamos refreshing, propagar error
@@ -125,14 +132,15 @@ function handleTokenRefresh(
   originalReq: HttpRequest<unknown>,
   next: HttpHandlerFn,
   tokenStore: SignalStoreService,
-  router: Router
+  router: Router,
+  usuariosService: UsuariosService
 ): Observable<HttpEvent<unknown>> {
   console.log(`🔄 Iniciando proceso de refresh token`);
   isRefreshing = true;
 
   const refreshTokenValue = tokenStore.currentRefreshToken();
 
-  if (!refreshTokenValue || refreshTokenValue.trim() === '') {
+  if (!refreshTokenValue) {
     console.error(`❌ Refresh token no encontrado`);
     isRefreshing = false;
     tokenStore.logout();
@@ -148,19 +156,15 @@ function handleTokenRefresh(
 
   console.log(`✅ Refresh token encontrado, llamando endpoint...`);
 
-  const usuariosService = inject(UsuariosService);
-
   // Llamar al endpoint de refresh con retry
-  return usuariosService.RefreshToken().pipe(
+  return tokenStore.RefreshToken().pipe(
     switchMap((resp: refreshToken) => {
       console.log(`✅ Token refreshed exitosamente`);
 
       // Actualizar tokens
       tokenStore.updateToken(resp.token);
       tokenStore.updateRefreshToken(resp.refreshToken);
-
       console.log(`🔄 Reintentando request original con nuevo token`);
-
       // Reintentar request original con nuevo token
       const retryReq = originalReq.clone({
         setHeaders: {
