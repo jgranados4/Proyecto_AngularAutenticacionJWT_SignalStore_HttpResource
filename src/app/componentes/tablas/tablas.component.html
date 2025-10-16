@@ -31,7 +31,8 @@
     <tbody>
       <!-- ✅ @let para obtener data del store -->
       @let usuarios = store.usuarios();
-      <!-- ✅ @for con track optimizado -->
+      @defer (when usuarios) {
+         <!-- ✅ @for con track optimizado -->
       @for (usuario of usuarios; track trackByUsuarioId($index, usuario)) {
       <tr>
         <!-- ✅ Modo lectura vs modo edición -->
@@ -118,6 +119,12 @@
         </td>
       </tr>
       }
+      }@placeholder {
+        <div>
+          datos de Usuarios
+        </div>
+      }
+     
     </tbody>
 
     <!-- ✅ Acciones globales -->

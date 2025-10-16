@@ -21,6 +21,7 @@ import { faRepeat } from '@fortawesome/free-solid-svg-icons';
 import { UsuariosStoreService } from '@app/core/services';
 import { Usuario, UsuarioForm } from '@app/core/models/usuario';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { SignalStoreService } from '@app/core/services/TokenStore.service';
 
 @Component({
   selector: 'app-tablas',
@@ -36,6 +37,7 @@ export class TablasComponent {
   private fb = inject(NonNullableFormBuilder);
   private destroyRef = inject(DestroyRef);
   readonly store = inject(UsuariosStoreService);
+  readonly token = inject(SignalStoreService).currentToken;
 
   // ✅ Signals para estado reactivo
   readonly tablaSeleccionada = signal<string>('tabla1');
@@ -66,9 +68,21 @@ export class TablasComponent {
   readonly faRepeat = faRepeat;
 
   constructor() {
+    let previousToken: string | null = null;
     // ✅ Effect para debugging (solo en desarrollo)
     effect(() => {
       console.log('Estado usuarios:', this.store.state());
+
+      if (!this.token()) {
+        previousToken = null;
+        return;
+      }
+
+      if (this.token() !== previousToken) {
+        previousToken = this.token();
+        console.log('[UsuariosStore] token nuevo detectado. reload()');
+        this.store.usuariosResource.reload();
+      }
     });
   }
 
@@ -100,16 +114,13 @@ export class TablasComponent {
     }
 
     const usuarioActualizado = this.editForm.getRawValue();
-    this.store
-      .updateUsuarioOptimistic(id, usuarioActualizado)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: () => {
-          console.log('entro al backend');
-          this.cancelarEdicion();
-          this.store.reloadUsuarios();
-        },
-      });
+    this.store.updateUsuarioOptimistic(id, usuarioActualizado).subscribe({
+      next: () => {
+        console.log('entro al backend');
+        this.cancelarEdicion();
+        this.store.reloadUsuarios();
+      },
+    });
   }
 
   // ✅ Cancelar edición
@@ -122,13 +133,17 @@ export class TablasComponent {
   // ✅ Eliminar usuario individual
   eliminar(id: number): void {
     if (confirm('¿Estás seguro de eliminar este usuario?')) {
-      this.store.deleteUsuario(id);
+      this.store.deleteUsuario(id).subscribe({
+        next: () => {
+          this.store.reloadUsuarios();
+        },
+      });
     }
   }
-
   // ✅ Recargar datos
   recargar(): void {
     this.activarAnimacion();
+    this.store.reloadUsuarios();
   }
 
   // ✅ Scroll a tabla específica

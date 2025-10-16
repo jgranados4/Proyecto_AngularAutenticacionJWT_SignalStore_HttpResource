@@ -26,7 +26,6 @@ import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { CommonModule, DatePipe } from '@angular/common';
 import { MessageService } from '@app/core/services/message.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { UsuariosService } from '@app/core/services';
 import { SignalStoreService } from '@app/core/services/TokenStore.service';
 
 @Component({
@@ -42,7 +41,7 @@ export class NavbarComponent {
   rotateright = faRotateRight;
   arrowsrotate = faArrowsRotate;
   triangleexclamation = faTriangleExclamation;
-  check=faCheck;
+  check = faCheck;
   //*Inject
   usuarios = inject(SignalStoreService);
   mensja = inject(MessageService);

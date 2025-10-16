@@ -1,4 +1,9 @@
-import { ChangeDetectorRef, Component, inject } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component,
+  inject,
+} from '@angular/core';
 import { NavbarComponent } from '../navbar/navbar.component';
 import {
   FormBuilder,
@@ -9,18 +14,17 @@ import {
 } from '@angular/forms';
 import { UsuariosService } from '@core/services/usuarios.service';
 import { Login } from '../../core/models/usuario';
-import { AuthResponse2, LoginData } from '../../core/models/AuthResponse';
 import { MessageService } from '../../core/services/message.service';
 import { Router } from '@angular/router';
 import { delay } from 'rxjs';
-import { CookieService } from 'ngx-cookie-service';
 import { SignalStoreService } from '@app/core/services/TokenStore.service';
 
 @Component({
   selector: 'app-iniciar',
-  imports: [NavbarComponent, ReactiveFormsModule],
+  imports: [ReactiveFormsModule],
   templateUrl: './iniciar.component.html',
   styleUrl: './iniciar.component.css',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class IniciarComponent {
   GetToken: string = '';
