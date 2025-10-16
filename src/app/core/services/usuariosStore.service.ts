@@ -47,7 +47,7 @@ export class UsuariosStoreService {
   readonly loadingError: Signal<any> = computed(() =>
     this.usuariosResource.error()
   );
-  readonly reload = computed(() => this.usuariosResource.reload());
+
   // ✅ Método para recargar manualmente
   reloadUsuarios(): void {
     this.usuariosResource.reload();

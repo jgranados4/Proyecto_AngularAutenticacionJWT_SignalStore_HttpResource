@@ -1,6 +1,6 @@
 import { computed, inject, Injectable, Signal, signal } from '@angular/core';
 import { environment } from '../../../environments/environment.development';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpHeaders } from '@angular/common/http';
 import { Login, Usuario } from '../models/usuario';
 import { CookieService } from 'ngx-cookie-service';
 import {
@@ -10,7 +10,6 @@ import {
   tokenpayload2,
 } from '../models/AuthResponse';
 import { Router } from '@angular/router';
-import { toSignal } from '@angular/core/rxjs-interop';
 import { catchError, map, Observable, of } from 'rxjs';
 import { HttpGenericoService } from './HttpGenerico/http-generico.service';
 
@@ -64,14 +63,5 @@ export class UsuariosService {
       headers: this.headers,
     });
   }
-  //* Refrescar Token
-  RefreshToken(): Observable<refreshToken> {
-    const refreshToken = this._cookies.get('refreshToken');
-    return this.HttpResource.mutate<refreshToken>({
-      method: 'POST',
-      url: `${this.URL}/RefreshToken/refresh`,
-      body: { refreshToken: refreshToken },
-      headers: this.headers,
-    });
-  }
+ 
 }

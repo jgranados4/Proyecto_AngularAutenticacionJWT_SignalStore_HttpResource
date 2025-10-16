@@ -1,8 +1,14 @@
 import { computed, effect, inject, Injectable, signal } from '@angular/core';
-import { AuthResponse2, tokenpayload2 } from '../models/AuthResponse';
+import {
+  AuthResponse2,
+  tokenpayload2,
+  refreshToken,
+} from '../models/AuthResponse';
 import { CookieService } from 'ngx-cookie-service';
 import { HttpGenericoService } from './HttpGenerico/http-generico.service';
 import { environment } from 'src/environments/environment.development';
+import { HttpHeaders } from '@angular/common/http';
+import { Observable } from 'rxjs';
 
 @Injectable({
   providedIn: 'root',
@@ -11,7 +17,9 @@ export class SignalStoreService {
   private readonly cookies = inject(CookieService);
   private readonly HttpResource = inject(HttpGenericoService);
   private readonly URL = environment.url;
-
+  private readonly headers = new HttpHeaders({
+    'Content-Type': 'application/json; charset=utf-8',
+  });
   //* ========== COOKIES KEYS ==========
   private readonly TOKEN_KEY = 'token';
   private readonly REFRESH_TOKEN_KEY = 'refreshToken';
@@ -38,7 +46,7 @@ export class SignalStoreService {
     return !!token && token.trim().length > 0;
   });
 
-  //* ==================== HTTP RESOURCE ====================
+  //* ==================== HTTP RESOURCE  ====================
   /**
    * ✅ Resource solo se ejecuta si hay token válido
    */
@@ -50,7 +58,15 @@ export class SignalStoreService {
       return token && token.trim() ? { token } : undefined;
     },
   });
-
+  //* Refrescar Token
+  RefreshToken(): Observable<refreshToken> {
+    return this.HttpResource.mutate<refreshToken>({
+      method: 'POST',
+      url: `${this.URL}/RefreshToken/refresh`,
+      body: { refreshToken: this.currentRefreshToken() },
+      headers: this.headers,
+    });
+  }
   //* ==================== COMPUTED SIGNALS DERIVADOS ====================
   /**
    * ✅ OPTIMIZADO: Token status con manejo correcto de todos los estados
@@ -92,6 +108,9 @@ export class SignalStoreService {
       // Verificar expiración por tiempoRestante (prioritario)
       if (tokenData?.tiempoRestante !== undefined) {
         const isExpired = tokenData.tiempoRestante <= 0;
+        if (isExpired) {
+          this.logout();
+        }
         return isExpired ? 'expired' : 'valid';
       }
 
@@ -216,7 +235,7 @@ export class SignalStoreService {
       path: '/',
       secure: environment.production, // Solo HTTPS en producción
       sameSite: 'Strict',
-      expires: 0.0208, // 7 días
+      expires: 0.0208,
     });
 
     console.log('✅ Token guardado');
@@ -225,6 +244,7 @@ export class SignalStoreService {
     if (refreshToken && refreshToken.trim()) {
       this.updateRefreshToken(refreshToken);
     }
+    this.TokenDecoded2.reload();
   }
 
   /**
@@ -246,6 +266,7 @@ export class SignalStoreService {
     });
 
     console.log('✅ Token actualizado');
+    this.TokenDecoded2.reload();
   }
 
   /**
