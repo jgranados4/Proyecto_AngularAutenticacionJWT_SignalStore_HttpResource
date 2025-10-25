@@ -22,10 +22,42 @@
         type="password"
         placeholder="Ingrese el contraseña"
       />
-      @if(formbuil.get('constrasena')?.hasError('required')){
-      <p>se requiere la contrasena</p>
-      }@else if (formbuil.get('constrasena')?.hasError('minlength')) {
-      <p>la contrasena debe tener al menos 4 caracteres</p>
+      <!-- ✨ INDICADOR DE FORTALEZA CON COMPUTED SIGNAL -->
+      @if(contrasenaValue()) {
+      <div class="password-strength mt-2">
+        <progress
+          class="progress {{ passwordStrength().color }}"
+          [value]="passwordStrength().percentage"
+          max="100"
+        ></progress>
+        <p class="help {{ passwordStrength().color }}">
+          Fortaleza: <strong>{{ passwordStrength().label }}</strong>
+        </p>
+      </div>
+      }
+
+      <!-- Errores de validación -->
+      @if(shouldShowPasswordErrors()) {
+      <div class="errors-container mt-2">
+        <!-- Errores de frontend -->
+        @if(getPasswordFrontendErrors().length > 0) {
+        <ul class="help is-danger">
+          @for(msg of getPasswordFrontendErrors(); track $index) {
+          <li>{{ msg }}</li>
+          }
+        </ul>
+        }
+
+        <!-- Errores del backend -->
+        @if(getPasswordBackendErrors().length > 0) {
+        <ul class="help is-danger">
+          <li><strong>Errores del servidor:</strong></li>
+          @for(msg of getPasswordBackendErrors(); track $index) {
+          <li>{{ msg }}</li>
+          }
+        </ul>
+        }
+      </div>
       }
     </div>
   </div>
