@@ -27,7 +27,7 @@ const PUBLIC_ENDPOINTS = [
   '/auth/login',
   '/auth/register',
   '/UsuarioAUs/login',
-  '/UsuarioAUs/register',
+  '/UsuarioAUs/',
   '/login',
   '/register',
   '/DecodeToken',
