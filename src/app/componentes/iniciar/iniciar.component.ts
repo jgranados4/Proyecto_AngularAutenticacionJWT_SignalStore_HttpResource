@@ -58,10 +58,9 @@ export class IniciarComponent {
             response.data.token,
             response.data.refreshToken
           );
-          this.usuarios.debugTokenState();
           let message = JSON.stringify(response.message);
           this.msj.success(message);
-          this.router.navigate(['/dashboard']);
+          this.router.navigate(['/dashboard/Tablas']);
 
           //recargar pagina con angular
         },
