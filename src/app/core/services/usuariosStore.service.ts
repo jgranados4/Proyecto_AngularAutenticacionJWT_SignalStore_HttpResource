@@ -4,7 +4,6 @@ import { UsuariosService } from './usuarios.service';
 import { catchError, Observable, tap, throwError } from 'rxjs';
 import { AuthResponse2, LoginData } from '../models/AuthResponse';
 interface UsuariosState {
-  usuarioActual: Usuario | null;
   error: string | null;
 }
 @Injectable({
@@ -19,7 +18,6 @@ export class UsuariosStoreService {
   readonly usuariosResource = this.#usuarioService.GetUsuario;
   // ===== Estado local adicional (no cubierto por httpResource) =====
   readonly #stateSignal = signal<UsuariosState>({
-    usuarioActual: null,
     error: null,
   });
   // ===== Signals públicos derivados de httpResource =====
@@ -52,12 +50,6 @@ export class UsuariosStoreService {
   reloadUsuarios(): void {
     this.usuariosResource.reload();
   }
-  /**
-   * Usuario actual (del login) - Desde state local
-   */
-  readonly usuarioActual: Signal<Usuario | null> = computed(
-    () => this.#stateSignal().usuarioActual
-  );
 
   /**
    * Error general (login, crear, etc.) - Desde state local
@@ -85,7 +77,6 @@ export class UsuariosStoreService {
    */
   readonly state = computed(() => ({
     usuarios: this.usuarios(),
-    usuarioActual: this.usuarioActual(),
     loading: this.loading(),
     loadingError: this.loadingError(),
     error: this.error(),
@@ -185,7 +176,6 @@ export class UsuariosStoreService {
    */
   reset(): void {
     this.#patchState({
-      usuarioActual: null,
       error: null,
     });
   }
