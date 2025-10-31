@@ -1,129 +1,88 @@
 import { inject } from '@angular/core';
-import { CanActivateFn, Router } from '@angular/router';
-import { UsuariosService } from '../services/usuarios.service';
-import { catchError, map, Observable, of, switchMap, timeout } from 'rxjs';
+import { CanActivateFn } from '@angular/router';
 import { SignalStoreService } from '../services/TokenStore.service';
 
+/**
+ * 🛡️ Auth Guard - Valida acceso a rutas protegidas
+ * El interceptor maneja el refresh automático
+ */
 export const authGuard: CanActivateFn = (route, state) => {
   const tokenStore = inject(SignalStoreService);
-  const usuariosService = inject(UsuariosService);
-  const router = inject(Router);
-
-  return checkAuthentication(tokenStore, usuariosService, router, state.url);
-};
-
-function checkAuthentication(
-  tokenStore: SignalStoreService,
-  usuariosService: UsuariosService,
-  router: Router,
-  returnUrl: string
-): Observable<boolean> {
   const tokenStatus = tokenStore.tokenStatus();
-  console.log(`🔐 Auth Guard: ${tokenStatus} - ${returnUrl}`);
+  const returnUrl = state.url;
 
-  switch (tokenStatus) {
-    case 'valid':
-      return of(true);
+  console.log(`🛡️ Guard: Estado="${tokenStatus}" - Ruta="${returnUrl}"`);
 
-    case 'validating':
-      return waitForValidation(tokenStore, router, returnUrl);
-
-    case 'expired':
-      return attemptTokenRefresh(
-        tokenStore,
-        usuariosService,
-        router,
-        returnUrl
-      );
-
-    case 'no-token':
-    case 'error':
-    default:
-      console.warn(`❌ Redirigiendo a login (${tokenStatus})`);
-      return navigateToLogin(router, returnUrl);
-  }
-}
-
-function waitForValidation(
-  tokenStore: SignalStoreService,
-  router: Router,
-  returnUrl: string
-): Observable<boolean> {
-  return new Observable<boolean>((subscriber) => {
-    let attempts = 0;
-    const maxAttempts = 30; // 3s máximo
-
-    const checkInterval = setInterval(() => {
-      attempts++;
-      const status = tokenStore.tokenStatus();
-
-      if (status === 'valid') {
-        console.log('✅ Token validado');
-        clearInterval(checkInterval);
-        subscriber.next(true);
-        subscriber.complete();
-      } else if (status !== 'validating' || attempts >= maxAttempts) {
-        console.warn(`⚠️ Validación falló: ${status}`);
-        clearInterval(checkInterval);
-        navigateToLogin(router, returnUrl).subscribe((result) => {
-          subscriber.next(result);
-          subscriber.complete();
-        });
-      }
-    }, 100);
-
-    return () => clearInterval(checkInterval);
-  }).pipe(
-    timeout(5000),
-    catchError(() => {
-      console.error('❌ Timeout en validación');
-      return navigateToLogin(router, returnUrl);
-    })
-  );
-}
-
-function attemptTokenRefresh(
-  tokenStore: SignalStoreService,
-  usuariosService: UsuariosService,
-  router: Router,
-  returnUrl: string
-): Observable<boolean> {
-  console.log('🔄 Intentando refresh en guard');
-
-  return tokenStore.RefreshToken().pipe(
-    switchMap((refreshResponse) => {
-      tokenStore.updateToken(refreshResponse.token);
-      tokenStore.updateRefreshToken(refreshResponse.refreshToken);
-      tokenStore.reloadTokenData();
-
-      const newStatus = tokenStore.tokenStatus();
-      return newStatus === 'valid'
-        ? of(true)
-        : navigateToLogin(router, returnUrl);
-    }),
-    timeout(10000),
-    catchError((error) => {
-      console.error('❌ Refresh falló en guard', error);
-      tokenStore.logout();
-      return navigateToLogin(router, returnUrl);
-    })
-  );
-}
-
-function navigateToLogin(
-  router: Router,
-  returnUrl: string
-): Observable<boolean> {
-  // Evitar loops infinitos
-  if (returnUrl.includes('/login') || returnUrl.includes('/Registrar')) {
-    return of(false);
+  // Token válido → Acceso inmediato
+  if (tokenStatus === 'valid') {
+    return true;
   }
 
-  console.log(`🚪 Redirigiendo a login (returnUrl: ${returnUrl})`);
-  return of(
-    router.navigate(['/login'], {
-      queryParams: { returnUrl },
-      replaceUrl: true,
-    })
-  ).pipe(map(() => false));
-}
+  // Token expirado → El interceptor manejará el refresh en el primer request
+  if (tokenStatus === 'expired') {
+    console.log('⏰ Token expirado - interceptor manejará refresh');
+    return true;
+  }
+
+  // Sin token o error → Redirigir a login
+  if (tokenStatus === 'no-token') {
+    console.warn(`🚫 Sin autenticación (${tokenStatus})`);
+
+    // Evitar loops en rutas públicas
+    if (returnUrl.includes('/login') || returnUrl.includes('/Registrar')) {
+      return true;
+    }
+
+    tokenStore.logoutAndNavigate(returnUrl);
+    return false;
+  }
+
+  // Validando → Esperar brevemente (solo durante inicialización)
+  if (tokenStatus === 'validating') {
+    console.log('⏳ Token validando - esperando...');
+
+    return new Promise<boolean>((resolve) => {
+      let attempts = 0;
+      const maxAttempts = 20; // 2 segundos
+
+      const checkInterval = setInterval(() => {
+        attempts++;
+        const currentStatus = tokenStore.tokenStatus();
+
+        // Token validado
+        if (currentStatus === 'valid') {
+          clearInterval(checkInterval);
+          resolve(true);
+          return;
+        }
+
+        // Token expirado → Interceptor manejará
+        if (currentStatus === 'expired') {
+          clearInterval(checkInterval);
+          resolve(true);
+          return;
+        }
+
+        // Error o sin token
+        if (currentStatus === 'no-token') {
+          clearInterval(checkInterval);
+          tokenStore.logoutAndNavigate(returnUrl);
+          resolve(false);
+          return;
+        }
+
+        // Timeout
+        if (attempts >= maxAttempts) {
+          clearInterval(checkInterval);
+          console.error('❌ Timeout esperando validación');
+          tokenStore.logoutAndNavigate(returnUrl);
+          resolve(false);
+        }
+      }, 100);
+    });
+  }
+  // Estado desconocido → Logout
+  console.warn(`⚠️ Estado desconocido: ${tokenStatus}`);
+  tokenStore.logoutAndNavigate(returnUrl);
+  return false;
+};
