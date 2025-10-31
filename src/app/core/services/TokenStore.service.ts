@@ -9,36 +9,32 @@ import { HttpGenericoService } from './HttpGenerico/http-generico.service';
 import { environment } from 'src/environments/environment.development';
 import { HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { Router } from '@angular/router';
 
-@Injectable({
-  providedIn: 'root',
-})
+@Injectable({ providedIn: 'root' })
 export class SignalStoreService {
   private readonly cookies = inject(CookieService);
   private readonly HttpResource = inject(HttpGenericoService);
+  private readonly router = inject(Router);
   private readonly URL = environment.url;
   private readonly headers = new HttpHeaders({
     'Content-Type': 'application/json; charset=utf-8',
   });
-  //* ========== COOKIES KEYS ==========
+
   private readonly TOKEN_KEY = 'token';
   private readonly REFRESH_TOKEN_KEY = 'refreshToken';
 
-  //* ========== STATE SIGNALS ==========
-  /**
-   * ✅ Inicializa desde cookies de forma segura
-   */
-  private readonly stateSignal = signal<string>(
-    this.cookies.get(this.TOKEN_KEY) || ''
-  );
-  /**
-   * RefreshToken (privado)
-   */
-  private readonly refreshTokenSignal = signal<string>(
+  //* ==================== SIGNALS ====================
+  private readonly stateSignal = signal(this.cookies.get(this.TOKEN_KEY) || '');
+  private readonly refreshTokenSignal = signal(
     this.cookies.get(this.REFRESH_TOKEN_KEY) || ''
   );
+  private readonly contaSegundo = signal(0);
+  private readonly isRefreshingToken = signal(false);
+  private readonly lastRefreshTimestamp = signal(0);
+  private readonly isNavigatingToLogin = signal(false);
 
-  //* ==================== SIGNALS PÚBLICOS ====================
+  //* ==================== COMPUTED PÚBLICOS ====================
   readonly currentToken = computed(() => this.stateSignal());
   readonly currentRefreshToken = computed(() => this.refreshTokenSignal());
   readonly checkToken = computed(() => {
@@ -46,19 +42,15 @@ export class SignalStoreService {
     return !!token && token.trim().length > 0;
   });
 
-  //* ==================== HTTP RESOURCE  ====================
-  /**
-   * ✅ Resource solo se ejecuta si hay token válido
-   */
+  //* ==================== HTTP RESOURCE ====================
   TokenDecoded2 = this.HttpResource.get<AuthResponse2<tokenpayload2>>({
     url: `${this.URL}/UsuarioAUs/DecodeToken`,
     params: () => {
       const token = this.currentToken();
-      // Solo hacer request si hay token válido (no vacío)
       return token && token.trim() ? { token } : undefined;
     },
   });
-  //* Refrescar Token
+
   RefreshToken(): Observable<refreshToken> {
     return this.HttpResource.mutate<refreshToken>({
       method: 'POST',
@@ -67,95 +59,89 @@ export class SignalStoreService {
       headers: this.headers,
     });
   }
-  //* ==================== COMPUTED SIGNALS DERIVADOS ====================
-  /**
-   * ✅ OPTIMIZADO: Token status con manejo correcto de todos los estados
-   */
-  tokenStatus = computed(() => {
-    const token = this.stateSignal();
+  //* ==================== TIEMPO RESTANTE ====================
+  tiempoRestanteSegundos = computed(() => {
+    this.contaSegundo(); // Reactividad cada segundo
 
-    // 1️⃣ Sin token
-    if (!token || token.trim() === '') {
-      return 'no-token';
+    if (!this.checkToken()) {
+      return 0;
     }
 
-    // 2️⃣ Resource no se ha ejecutado (idle)
+    // Si el resource está cargando o no tiene datos, retornar -1 (estado desconocido)
     const resourceStatus = this.TokenDecoded2.status();
-    if (resourceStatus === 'idle') {
-      // Si hay token pero resource está idle, probablemente params retornó undefined
-      return 'no-token';
+    if (resourceStatus === 'idle' || this.TokenDecoded2.isLoading()) {
+      return -1; // -1 indica "calculando"
+    }
+    // Si hay error o no hay datos, retornar 0
+    if (this.TokenDecoded2.error() || !this.TokenDecoded2.hasValue()) {
+      return 0;
     }
 
-    // 3️⃣ Cargando SOLO si no hay valor previo
-    if (this.TokenDecoded2.isLoading()) {
-      return 'validating';
+    const tokenData = this.TokenDecoded2.value()?.data;
+    if (!tokenData?.expiracion) {
+      return 0;
     }
 
-    // 4️⃣ Error en la decodificación
-    if (this.TokenDecoded2.error()) {
-      this.logout();
-      console.error(
-        '❌ Error decodificando token:',
-        this.TokenDecoded2.error()
+    try {
+      const expiracionStr =
+        tokenData.expiracion instanceof Date
+          ? tokenData.expiracion.toISOString()
+          : tokenData.expiracion;
+
+      const segundosRestantes = Math.floor(
+        (new Date(expiracionStr).getTime() - Date.now()) / 1000
       );
-      return 'error';
+
+      return Math.max(0, segundosRestantes);
+    } catch {
+      return 0;
     }
+  });
+  //* ==================== TOKEN STATUS ====================
+  tokenStatus = computed(() => {
+  const segundos = this.tiempoRestanteSegundos();
 
-    // 5️⃣ Token decodificado - Verificar expiración
-    if (this.TokenDecoded2.hasValue()) {
-      const tokenData = this.TokenDecoded2.value().data;
+  // Sin token en cookie
+  if (!this.checkToken()) {
+    return 'no-token';
+  }
 
-      // Verificar expiración por tiempoRestante (prioritario)
-      if (tokenData?.tiempoRestante !== undefined) {
-        const isExpired = tokenData.tiempoRestante <= 0;
-        if (isExpired) {
-          this.logout();
-        }
-        return isExpired ? 'expired' : 'valid';
-      }
+  // Estado desconocido (aún calculando)
+  if (segundos === -1) {
+    return 'validating';
+  }
 
-      // Verificar por fecha de expiración
-      if (tokenData?.expiracion) {
-        const expiracion = new Date(tokenData.expiracion).getTime();
-        const ahora = Date.now();
-        const bufferMs = 60000; // 1 minuto de buffer
-
-        const isExpired = ahora >= expiracion - bufferMs;
-        return isExpired ? 'expired' : 'valid';
-      }
-
-      // Si no hay info de expiración, considerar válido
-      return 'valid';
-    }
-
-    // 6️⃣ Fallback: considerar expirado si no hay datos
+  // Token expirado (0 segundos o menos)
+  if (segundos <= 0) {
     return 'expired';
+  }
+
+  // Token válido
+  return 'valid';
+  });
+  isTokenExpired = computed(() => this.tokenStatus() === 'expired');
+  tiempoRestante = computed(() => {
+     const segundos = this.tiempoRestanteSegundos();
+
+     if (segundos === -1) return 'Calculando...';
+     if (segundos <= 0) return 'Expirado';
+
+     const minutos = Math.floor(segundos / 60);
+     const segs = segundos % 60;
+     return `${minutos}m ${segs.toString().padStart(2, '0')}s`;
   });
 
-  /**
-   * ✅ OPTIMIZADO: Verificación de expiración sin computed anidado
-   */
-  isTokenExpired = computed(() => {
-    const status = this.tokenStatus();
-    return status === 'expired';
+  // Umbral: 3 minutos antes de expirar
+  readonly needsRefreshSoon = computed(() => {
+    const segundos = this.tiempoRestanteSegundos();
+    return segundos > 0 && segundos <= 180; //3minutos
   });
 
-  /**
-   * ✅ Información detallada del token
-   */
+  //* ==================== TOKEN INFO ====================
   tokenInfo = computed(() => {
-    if (!this.TokenDecoded2.hasValue()) {
-      return null;
-    }
+    if (!this.TokenDecoded2.hasValue()) return null;
 
     const tokenData = this.TokenDecoded2.value().data;
-    const expiracionStr =
-      typeof tokenData?.expiracion === 'string'
-        ? tokenData.expiracion
-        : tokenData?.expiracion instanceof Date
-        ? tokenData.expiracion.toISOString()
-        : undefined;
-
     return {
       userId: tokenData.userId,
       email: tokenData?.email || '',
@@ -163,287 +149,208 @@ export class SignalStoreService {
       role: tokenData?.role || '',
       expiracion: tokenData?.expiracion || '',
       estaExpirado: this.isTokenExpired(),
-      tiempoRestante: this.calcularTiempoRestante(
-        expiracionStr,
-        tokenData?.tiempoRestante
-      ),
-      tiempoRestanteSegundos: tokenData?.tiempoRestante,
+      tiempoRestante: this.tiempoRestante(),
+      tiempoRestanteSegundos: this.tiempoRestanteSegundos(),
     };
   });
 
-  /**
-   * ✅ Usuario autenticado (token válido)
-   */
-  isAuthenticated = computed(() => {
-    return this.tokenStatus() === 'valid';
-  });
+  isAuthenticated = computed(() => this.tokenStatus() === 'valid');
 
-  /**
-   * ✅ Verificar si hay sesión persistida (al iniciar app)
-   */
-  hasPersistedSession = computed(() => {
-    const token = this.stateSignal();
-    const refreshToken = this.refreshTokenSignal();
-    return !!(token && refreshToken);
-  });
-
-  //* ==================== CONSTRUCTOR CON DEBUGGING ====================
+  //* ==================== CONSTRUCTOR ====================
   constructor() {
-    // 🔍 Effect para debugging (solo en desarrollo)
-    if (!environment.production) {
-      effect(() => {
-        const status = this.tokenStatus();
-        console.log(`📊 Token Status Changed: ${status}`);
-
-        if (status === 'validating') {
-          console.log('⏳ Resource loading...');
+    this.startTickerTimer();
+    effect(() => {
+      if (this.checkToken()) {
+        const rs = this.TokenDecoded2.status();
+        if (rs === 'idle') {
+          console.log(
+            '🔁 Token presente y resource idle -> reload TokenDecoded2'
+          );
+          this.TokenDecoded2.reload();
         }
+      }
+    });
+    effect(() => {
+       const status = this.tokenStatus();
+       const segundos = this.tiempoRestanteSegundos();
 
-        if (status === 'valid') {
-          const info = this.tokenInfo();
-          console.log('✅ Token válido:', {
-            usuario: info?.nombre,
-            expira: info?.tiempoRestante,
-          });
-        }
-      });
-    }
+       // 🔥 Logging para debug (puedes comentarlo después)
+       console.log(`🕐 Status: ${status}, Segundos: ${segundos}`);
 
-    // ✅ Log inicial de sesión persistida
-    if (this.hasPersistedSession()) {
-      console.log('🔐 Sesión persistida detectada al iniciar');
-    }
+       // Si el token expiró (status === 'expired'), cerrar sesión
+       if (status === 'expired' && segundos === 0) {
+         console.warn('⏰ Token expirado detectado → cerrando sesión');
+
+         // Importante: NO llamar logout aquí directamente para evitar loops
+         // Usar setTimeout para ejecutar en el siguiente tick
+         setTimeout(() => {
+           this.logoutAndNavigate();
+         }, 0);
+       }
+    });
   }
 
-  //* ==================== MÉTODOS DE MUTACIÓN ====================
-  /**
-   * ✅ Establece nuevo token + refreshToken
-   * Persiste en cookies de forma segura
-   */
+  //* ==================== EFFECTS ====================
+
+  // Effect 1: Timer cada segundo
+  private startTickerTimer(): void {
+    effect((onCleanup) => {
+      // Si no hay token, resetear contador
+      if (!this.checkToken()) {
+        this.contaSegundo.set(0);
+        return;
+      }
+
+      // 🔥 NUEVO: Si el token ya expiró, NO iniciar el timer
+      if (this.isTokenExpired()) {
+        console.log('⏹️ Token expirado - timer detenido');
+        return;
+      }
+
+      const interval = setInterval(() => {
+        // 🔥 NUEVO: Verificar expiración antes de cada tick
+        if (this.isTokenExpired()) {
+          console.log('⏹️ Token expiró durante timer - deteniendo');
+          clearInterval(interval);
+          return;
+        }
+
+        this.contaSegundo.update((tick) => tick + 1);
+      }, 1000);
+
+      onCleanup(() => {
+        clearInterval(interval);
+        console.log('🧹 Timer limpiado');
+      });
+    });
+  }
+
+  //* ==================== MUTACIÓN DE TOKENS ====================
+
   setToken(token: string, refreshToken?: string): void {
-    // 1. Validar token
     if (!token || token.trim() === '') {
-      console.warn('⚠️ Intentando establecer token vacío');
+      console.warn('⚠️ Token vacío');
       return;
     }
 
-    // 2. Actualizar signal
     this.stateSignal.set(token);
-
-    // 3. Persistir en cookie
     this.cookies.set(this.TOKEN_KEY, token, {
       path: '/',
-      secure: environment.production, // Solo HTTPS en producción
+      secure: environment.production,
       sameSite: 'Strict',
       expires: 0.0208,
     });
 
-    console.log('✅ Token guardado');
-
-    // 4. Manejar refreshToken si existe
-    if (refreshToken && refreshToken.trim()) {
+    if (refreshToken?.trim()) {
       this.updateRefreshToken(refreshToken);
     }
+
+    this.isNavigatingToLogin.set(false);
+    this.contaSegundo.set(0);
     this.TokenDecoded2.reload();
+    console.log('✅ Token guardado');
   }
 
-  /**
-   * ✅ Actualiza solo el token de acceso
-   */
   updateToken(newToken: string): void {
-    if (!newToken || newToken.trim() === '') {
-      console.warn('⚠️ Intentando actualizar con token vacío');
-      return;
-    }
+    if (!newToken || newToken.trim() === '') return;
 
     this.stateSignal.set(newToken);
-
     this.cookies.set(this.TOKEN_KEY, newToken, {
       path: '/',
       secure: environment.production,
       sameSite: 'Strict',
       expires: 0.0208,
     });
-
-    console.log('✅ Token actualizado');
-    this.TokenDecoded2.reload();
+    this.contaSegundo.set(0);
   }
 
-  /**
-   * ✅ Actualiza solo el refreshToken
-   */
   updateRefreshToken(newRefreshToken: string): void {
-    if (!newRefreshToken || newRefreshToken.trim() === '') {
-      console.warn('⚠️ Intentando actualizar con refresh token vacío');
-      return;
-    }
+    if (!newRefreshToken || newRefreshToken.trim() === '') return;
 
     this.refreshTokenSignal.set(newRefreshToken);
-
     this.cookies.set(this.REFRESH_TOKEN_KEY, newRefreshToken, {
       path: '/',
       secure: environment.production,
       sameSite: 'Strict',
-      expires: 7,
+      expires: 7, // 90 días
     });
-
-    console.log('✅ Refresh token actualizado');
   }
 
-  /**
-   * ✅ Cierra sesión y limpia todo
-   */
   logout(): void {
-    console.log('🚪 Cerrando sesión...');
-
-    // Limpiar signals
     this.stateSignal.set('');
     this.refreshTokenSignal.set('');
-
-    // Limpiar cookies
+    this.isRefreshingToken.set(false);
+    this.lastRefreshTimestamp.set(0);
+    this.contaSegundo.set(0);
     this.cookies.delete(this.TOKEN_KEY, '/');
     this.cookies.delete(this.REFRESH_TOKEN_KEY, '/');
-
-    console.log('✅ Sesión cerrada - Estado limpiado');
   }
 
-  /**
-   * ✅ Recarga manual del resource
-   */
+  logoutAndNavigate(returnUrl?: string): void {
+    // Protección contra navegaciones múltiples
+    if (this.isNavigatingToLogin()) {
+      console.log('⏭️ Ya navegando a login');
+      return;
+    }
+
+    this.isNavigatingToLogin.set(true);
+    this.logout();
+    const currentUrl = this.router.url;
+    const publicRoutes = ['/login', '/registrar'];
+    const isPublic = publicRoutes.some((route) => currentUrl.startsWith(route));
+    if (isPublic) {
+      // Ya estamos en ruta pública → no hacemos navegación
+      this.isNavigatingToLogin.set(false);
+      return;
+    }
+    const targetReturnUrl = returnUrl ?? currentUrl;
+    this.router
+      .navigate(['/login'], {
+        queryParams: { returnUrl: targetReturnUrl },
+        replaceUrl: true,
+      })
+      .then((navigated) => {
+        if (!navigated) {
+          console.warn('⚠️ Navegación falló, forzando...');
+          window.location.href = '/login';
+        }
+        this.isNavigatingToLogin.set(false);
+      })
+      .catch((error) => {
+        console.error('❌ Error navegando a login:', error);
+        window.location.href = '/login';
+        this.isNavigatingToLogin.set(false);
+      });
+  }
+
+  //* ==================== MÉTODOS PÚBLICOS ====================
+
   reloadTokenData(): void {
-    console.log('🔄 Recargando datos del token...');
     this.TokenDecoded2.reload();
   }
 
-  /**
-   * ✅ Verifica si hay sesión válida (útil para guards)
-   */
   hasValidSession(): boolean {
     const status = this.tokenStatus();
     return status === 'valid' || status === 'validating';
   }
-
-  //* ==================== HELPERS PRIVADOS ====================
-
-  /**
-   * ✅ Calcula tiempo restante en formato legible
-   */
-  private calcularTiempoRestante(
-    expiracion?: string,
-    tiempoRestanteSegundos?: number
-  ): string {
-    try {
-      let diferenciaMs: number;
-
-      // Caso 1: Si viene tiempoRestante en segundos (prioritario)
-      if (tiempoRestanteSegundos !== undefined) {
-        diferenciaMs = tiempoRestanteSegundos * 1000;
-      }
-      // Caso 2: Si viene fecha de expiración ISO
-      else if (expiracion) {
-        const expTimestamp = new Date(expiracion).getTime();
-        const ahora = Date.now();
-        diferenciaMs = expTimestamp - ahora;
-      }
-      // Caso 3: No hay información
-      else {
-        return 'Desconocido';
-      }
-
-      // Si ya expiró
-      if (diferenciaMs <= 0) {
-        return 'Expirado';
-      }
-
-      // Calcular unidades de tiempo
-      const segundos = Math.floor(diferenciaMs / 1000);
-      const minutos = Math.floor(segundos / 60);
-      const horas = Math.floor(minutos / 60);
-      const dias = Math.floor(horas / 24);
-
-      // Formatear según la cantidad de tiempo restante
-      if (dias > 0) {
-        const horasRestantes = horas % 24;
-        return horasRestantes > 0 ? `${dias}d ${horasRestantes}h` : `${dias}d`;
-      } else if (horas > 0) {
-        const minutosRestantes = minutos % 60;
-        return minutosRestantes > 0
-          ? `${horas}h ${minutosRestantes}m`
-          : `${horas}h`;
-      } else if (minutos > 0) {
-        const segundosRestantes = segundos % 60;
-        return segundosRestantes > 0
-          ? `${minutos}m ${segundosRestantes}s`
-          : `${minutos}m`;
-      } else {
-        return `${segundos}s`;
-      }
-    } catch (error) {
-      console.error('❌ Error calculando tiempo restante:', error);
-      return 'Error';
-    }
+  startRefreshing(): void {
+    this.isRefreshingToken.set(true);
+    this.lastRefreshTimestamp.set(Date.now());
   }
+  canRefreshNow(): boolean {
+    const lastRefresh = this.lastRefreshTimestamp();
+    const now = Date.now();
+    const COOLDOWN_MS = 30000; // 30 segundos
 
-  //* ==================== DEBUG ====================
-
-  /**
-   * 🔍 Información de debugging detallada
-   */
-  debugTokenState(): void {
-    console.group('🔐 Auth Store Debug');
-
-    // Estado de cookies
-    console.log('📦 Cookies:', {
-      tokenExists: this.cookies.check(this.TOKEN_KEY),
-      refreshTokenExists: this.cookies.check(this.REFRESH_TOKEN_KEY),
-      tokenPreview: this.cookies.get(this.TOKEN_KEY)?.substring(0, 30) + '...',
-    });
-
-    // Estado de signals
-    console.log('⚡ Signals:', {
-      checkToken: this.checkToken(),
-      tokenStatus: this.tokenStatus(),
-      isAuthenticated: this.isAuthenticated(),
-      hasPersistedSession: this.hasPersistedSession(),
-    });
-
-    // Estado del resource
-    console.log('📡 Resource:', {
-      status: this.TokenDecoded2.status(),
-      isLoading: this.TokenDecoded2.isLoading(),
-      hasValue: this.TokenDecoded2.hasValue(),
-      hasError: !!this.TokenDecoded2.error(),
-      errorMessage: this.TokenDecoded2.error()?.message || 'N/A',
-    });
-
-    // Info del token
-    const info = this.tokenInfo();
-    if (info) {
-      console.log('ℹ️ Token Info:', {
-        usuario: info.nombre,
-        email: info.email,
-        role: info.role,
-        expirado: info.estaExpirado,
-        tiempoRestante: info.tiempoRestante,
-      });
-    } else {
-      console.log('ℹ️ Token Info: No disponible');
-    }
-
-    console.groupEnd();
+    return !lastRefresh || now - lastRefresh >= COOLDOWN_MS;
   }
-
   /**
-   * 🧪 Simular expiración (solo para testing)
+   * ✅ Marca que el refresh finalizó
    */
-  _debugForceExpire(): void {
-    if (environment.production) {
-      console.warn('⚠️ debugForceExpire solo disponible en desarrollo');
-      return;
-    }
-
-    // Forzar recarga del resource
-    this.reloadTokenData();
-    console.log('🧪 Token forzado a revalidar');
+  finishRefreshing(): void {
+    this.isRefreshingToken.set(false);
+  }
+  isRefreshing(): boolean {
+    return this.isRefreshingToken();
   }
 }
