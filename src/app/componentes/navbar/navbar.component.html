@@ -1,5 +1,7 @@
-@let tokenInfo = usuarios.tokenInfo(); @let tokenStatus =
-usuarios.tokenStatus(); @let isLoading= usuarios.TokenDecoded2.isLoading();
+@let token = tokenInfo();
+@let Status = tokenStatus(); 
+@let Loading = isLoading();
+
 <nav class="navbar is-dark" role="navigation" aria-label="main navigation">
   <div class="navbar-brand">
     <div class="navbar-item">
@@ -45,6 +47,7 @@ usuarios.tokenStatus(); @let isLoading= usuarios.TokenDecoded2.isLoading();
     <!-- Información central del sistema -->
     <div class="navbar-item">
       <div class="field is-grouped is-grouped-multiline">
+        <!-- Fecha siempre visible -->
         <div class="control">
           <div class="tags has-addons">
             <span class="tag is-dark">Fecha</span>
@@ -54,39 +57,45 @@ usuarios.tokenStatus(); @let isLoading= usuarios.TokenDecoded2.isLoading();
           </div>
         </div>
 
-        @if (tokenInfo) {
-        <div class="control">
-          <div class="tags has-addons">
-            <span class="tag is-dark">Expira</span>
-            <span
-              class="tag"
-              [class]="getExpirationTagClass(tokenInfo.estaExpirado)"
-            >
-              {{ tokenInfo.expiracion | date : "dd/MM HH:mm" }}
-            </span>
+        <!-- ✅ Solo mostrar info de token si está autenticado -->
+        @if (token && Status === 'valid') {
+          <div class="control">
+            <div class="tags has-addons">
+              <span class="tag is-dark">Expira</span>
+              <span
+                class="tag"
+                [class]="getExpirationTagClass(token.estaExpirado)"
+              >
+                {{ token.expiracion | date : "dd/MM HH:mm" }}
+              </span>
+            </div>
           </div>
-        </div>
 
-        <div class="control">
-          <div class="tags has-addons">
-            <span class="tag is-dark">Restante</span>
-            <span
-              class="tag"
-              [class]="getTimeRemainingTagClass(tokenInfo.tiempoRestante)"
-            >
-              {{ tokenInfo.tiempoRestante || "Calculando..." }}
+          <div class="control">
+            <div class="tags has-addons">
+              <span class="tag is-dark">Restante</span>
+              <span
+                class="tag"
+                [class]="getTimeRemainingTagClass(token.tiempoRestante)"
+              >
+                {{ token.tiempoRestante || "Calculando..." }}
+              </span>
+            </div>
+          </div>
+        } @else if (Status === 'validating') {
+          <!-- Mostrar estado de validación -->
+          <div class="control">
+            <span class="tag is-warning">
+              <span class="icon">
+                <fa-icon [icon]="arrowsrotate" [spin]="true"></fa-icon>
+              </span>
+              <span>Validando token...</span>
             </span>
           </div>
-        </div>
-        } @else if (tokenStatus === 'validating') {
-        <div class="control">
-          <span class="tag is-warning is-loading">Validando token...</span>
-        </div>
-        } @else if (tokenStatus === 'error') {
-        <div class="control">
-          <span class="tag is-danger">Error de validación</span>
-        </div>
         }
+        <!-- ❌ REMOVIDO: El bloque 'no-token' porque es redundante -->
+        <!-- Cuando no hay token, simplemente no mostramos nada aquí -->
+        <!-- Los botones de login/registro ya indican claramente el estado -->
       </div>
     </div>
 
@@ -103,16 +112,7 @@ usuarios.tokenStatus(); @let isLoading= usuarios.TokenDecoded2.isLoading();
             <span class="icon">🔐</span>
             <span>Iniciar sesión</span>
           </a>
-
-          @if (tokenStatus === 'error') {
-          <button
-            class="button is-warning is-small"
-            (click)="refreshTokenData()"
-          >
-            <span class="icon">🔄</span>
-            <span>Reintentar</span>
-          </button>
-          } } @else {
+          } @else {
           <!-- Usuario autenticado -->
           <div class="user-profile-section">
             <!-- Card del usuario -->
@@ -139,19 +139,19 @@ usuarios.tokenStatus(); @let isLoading= usuarios.TokenDecoded2.isLoading();
 
               <!-- Estado del token visual -->
               <div class="token-status-indicator">
-                @if (tokenInfo?.estaExpirado) {
+                @if (token?.estaExpirado) {
                 <span class="tag is-danger is-small">
                   <fa-icon [icon]="triangleexclamation"></fa-icon>
                   <span>Expirado</span>
                 </span>
-                } @else if (tokenStatus === 'valid') {
+                } @else if (Status === 'valid') {
                 <span class="tag is-success is-small">
                   <fa-icon [icon]="check"></fa-icon>
                   <span>Activo</span>
                 </span>
-                } @else if (tokenStatus === 'validating') {
+                } @else if (Status === 'validating') {
                 <span class="tag is-warning is-small">
-                  <fa-icon [icon]="arrowsrotate"></fa-icon>
+                  <fa-icon [icon]="arrowsrotate" [spin]="true"></fa-icon>
                   <span>Validando</span>
                 </span>
                 }
@@ -163,24 +163,23 @@ usuarios.tokenStatus(); @let isLoading= usuarios.TokenDecoded2.isLoading();
               <button
                 class="button is-info is-small is-rounded"
                 (click)="refreshTokenData()"
-                [disabled]="isLoading"
+                [disabled]="Loading"
                 title="Revalidar token"
               >
-                @if (isLoading) {
-                <fa-icon [icon]="arrowsrotate"></fa-icon>
-                arrowsrotate } @else {
-                <fa-icon [icon]="rotateright"></fa-icon>
+                @if (Loading) {
+                  <fa-icon [icon]="arrowsrotate" [spin]="true"></fa-icon>
+                } @else {
+                  <fa-icon [icon]="rotateright"></fa-icon>
                 }
               </button>
 
-              <a
+              <button
                 class="button is-danger is-small"
                 (click)="logout()"
-                [routerLink]="['/login']"
               >
                 <fa-icon [icon]="open"></fa-icon>
                 <span>Salir</span>
-              </a>
+              </button>
             </div>
           </div>
           }
