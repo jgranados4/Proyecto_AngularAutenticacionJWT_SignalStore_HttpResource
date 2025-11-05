@@ -11,6 +11,7 @@ import {
   faArrowsRotate,
   faCheck,
   faDoorOpen,
+  faLock,
   faRotateRight,
   faTriangleExclamation,
 } from '@fortawesome/free-solid-svg-icons';
@@ -36,6 +37,7 @@ export class NavbarComponent {
   readonly arrowsrotate = faArrowsRotate;
   readonly triangleexclamation = faTriangleExclamation;
   readonly check = faCheck;
+  readonly lock=faLock;
 
   //* ==================== SIGNALS ====================
   readonly fecha = signal(new Date().toISOString());
@@ -82,25 +84,10 @@ export class NavbarComponent {
 
   //* ==================== CONSTRUCTOR ====================
   constructor() {
-    this.setupTokenMonitoring();
     this.setupClockTimer();
   }
 
   //* ==================== EFFECTS ====================
-
-  private setupTokenMonitoring(): void {
-    effect(() => {
-      const criticalState = this.tokenCriticalState();
-      if (!criticalState) return;
-
-      if (criticalState.type === 'warning') {
-        this.mensaje.warning(criticalState.message);
-      } else if (criticalState.type === 'critical') {
-        this.mensaje.error(criticalState.message);
-      }
-    });
-  }
-
   private setupClockTimer(): void {
     effect((onCleanup) => {
       this.fecha.set(new Date().toISOString());
@@ -120,7 +107,18 @@ export class NavbarComponent {
   }
 
   refreshTokenData(): void {
-    this.usuarios.reloadTokenData();
+    //refrescar 
+    this.usuarios.RefreshToken().subscribe({
+      next:(response)=>{
+        console.info("Actualizacion de token",response)
+      },
+      error:(error)=>{
+       console.error("Actualizacion de token",error) 
+      },
+      complete:()=> {
+          console.log("completado")
+      },
+    })
   }
 
   //* ==================== HELPERS DE VISTA ====================
@@ -166,7 +164,7 @@ export class NavbarComponent {
     const roleLower = role.toLowerCase();
 
     if (roleLower.includes('admin')) return 'is-danger';
-    if (roleLower.includes('user')) return 'is-primary';
+    if (roleLower.includes('cliente')) return 'is-primary';
 
     return 'is-light';
   }

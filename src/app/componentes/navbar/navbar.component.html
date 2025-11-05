@@ -167,12 +167,18 @@
                 title="Revalidar token"
               >
                 @if (Loading) {
-                  <fa-icon [icon]="arrowsrotate" [spin]="true"></fa-icon>
+                  <fa-icon [icon]="arrowsrotate"></fa-icon>
                 } @else {
                   <fa-icon [icon]="rotateright"></fa-icon>
                 }
               </button>
-
+              <button
+                class="button is-danger is-small"
+                (click)="logout()"
+              >
+                <fa-icon [icon]="lock"></fa-icon>
+                <span>Contrasena</span>
+              </button>
               <button
                 class="button is-danger is-small"
                 (click)="logout()"
