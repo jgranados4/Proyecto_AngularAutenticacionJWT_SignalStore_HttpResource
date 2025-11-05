@@ -321,16 +321,11 @@ function executeTokenRefresh(
   tokenStore.startRefreshing();
 
   return tokenStore.RefreshToken().pipe(
-    tap((resp: refreshToken) => {
-      // Actualizar tokens en el store
-      tokenStore.updateToken(resp.token);
-      tokenStore.updateRefreshToken(resp.refreshToken);
-      tokenStore.reloadTokenData();
+    tap(() => {
       console.log('✅ Tokens actualizados en store');
     }),
     catchError((refreshError: HttpErrorResponse) => {
       console.error('❌ Error al refrescar token:', refreshError);
-
       // Refresh token inválido/revocado → Cerrar sesión
       if (refreshError.status === 401) {
         const errorMsg = refreshError.error?.message || '';
@@ -341,7 +336,6 @@ function executeTokenRefresh(
 
         tokenStore.logoutAndNavigate();
       }
-
       return throwError(() => refreshError);
     }),
     finalize(() => {
