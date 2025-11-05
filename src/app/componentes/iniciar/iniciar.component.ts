@@ -4,19 +4,14 @@ import {
   Component,
   inject,
 } from '@angular/core';
-import { NavbarComponent } from '../navbar/navbar.component';
 import {
   FormBuilder,
-  FormControl,
-  FormGroup,
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
-import { UsuariosService } from '@core/services/usuarios.service';
 import { Login } from '../../core/models/usuario';
 import { MessageService } from '../../core/services/message.service';
 import { Router } from '@angular/router';
-import { delay } from 'rxjs';
 import { SignalStoreService } from '@app/core/services/TokenStore.service';
 
 @Component({
@@ -30,7 +25,6 @@ export class IniciarComponent {
   GetToken: string = '';
   //*Inject
   usuarios = inject(SignalStoreService);
-  auth = inject(UsuariosService);
   router = inject(Router);
   msj = inject(MessageService);
   public fb = inject(FormBuilder);
@@ -48,25 +42,17 @@ export class IniciarComponent {
       email: this.formbuild.value.email,
       constrasena: this.formbuild.value.constrasena,
     };
-    this.auth
-      .Login(login)
-      .pipe(delay(1000))
-      .subscribe({
-        next: (response: any) => {
-          console.log('response', response);
-          this.usuarios.setToken(
-            response.data.token,
-            response.data.refreshToken
-          );
-          let message = JSON.stringify(response.message);
-          this.msj.success(message);
-          this.router.navigate(['/dashboard/Tablas']);
-
-          //recargar pagina con angular
-        },
-        error: (error: any) => {
-          console.log('error', error);
-        },
-      });
+    this.usuarios.Login(login).subscribe({
+      next: (response: any) => {
+        console.log('response', response);
+        this.usuarios.setToken(response.data.token, response.data.refreshToken);
+        let message = JSON.stringify(response.message);
+        this.msj.success(message);
+        this.router.navigate(['/dashboard/Tablas']);
+      },
+      error: (error: any) => {
+        console.log('error', error);
+      },
+    });
   }
 }
