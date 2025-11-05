@@ -3,13 +3,15 @@ import {
   AuthResponse2,
   tokenpayload2,
   refreshToken,
+  LoginData,
 } from '../models/AuthResponse';
 import { CookieService } from 'ngx-cookie-service';
 import { HttpGenericoService } from './HttpGenerico/http-generico.service';
 import { environment } from 'src/environments/environment.development';
 import { HttpHeaders } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, retry, tap } from 'rxjs';
 import { Router } from '@angular/router';
+import { Login } from '../models/usuario';
 
 @Injectable({ providedIn: 'root' })
 export class SignalStoreService {
@@ -57,8 +59,29 @@ export class SignalStoreService {
       url: `${this.URL}/RefreshToken/refresh`,
       body: { refreshToken: this.currentRefreshToken() },
       headers: this.headers,
-    });
+    }).pipe(
+      retry(1),
+      tap((response)=>{
+        this.updateToken(response.token)
+        this.updateRefreshToken(response.refreshToken)
+      })
+    );
   }
+   Login(datos: Login): Observable<AuthResponse2> {
+      return this.HttpResource.mutate<AuthResponse2<LoginData>>({
+        method: 'POST',
+        url: `${this.URL}/UsuarioAUs/login`,
+        body: datos,
+        headers: this.headers,
+      }).pipe(
+        tap((response)=>{
+          this.setToken(
+            response.data.token,
+            response.data.refreshToken
+          );
+        } )
+      );
+    }
   //* ==================== TIEMPO RESTANTE ====================
   tiempoRestanteSegundos = computed(() => {
     this.contaSegundo(); // Reactividad cada segundo
@@ -159,17 +182,6 @@ export class SignalStoreService {
   //* ==================== CONSTRUCTOR ====================
   constructor() {
     this.startTickerTimer();
-    effect(() => {
-      if (this.checkToken()) {
-        const rs = this.TokenDecoded2.status();
-        if (rs === 'idle') {
-          console.log(
-            '🔁 Token presente y resource idle -> reload TokenDecoded2'
-          );
-          this.TokenDecoded2.reload();
-        }
-      }
-    });
     effect(() => {
        const status = this.tokenStatus();
        const segundos = this.tiempoRestanteSegundos();
