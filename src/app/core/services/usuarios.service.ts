@@ -54,14 +54,4 @@ export class UsuariosService {
       headers: this.headers,
     });
   }
-  //*Login
-  Login(datos: Login): Observable<AuthResponse2> {
-    return this.HttpResource.mutate<AuthResponse2<LoginData>>({
-      method: 'POST',
-      url: `${this.URL}/UsuarioAUs/login`,
-      body: datos,
-      headers: this.headers,
-    });
-  }
- 
 }
