@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 import { RegistrateComponent } from './componentes/registrate/registrate.component';
 import { IniciarComponent } from './componentes/iniciar/iniciar.component';
 import { authGuard } from './core/guards/auth.guard';
+import { rolesGuard } from './core/guards/roles.guard';
 
 export const routes: Routes = [
   {
@@ -34,6 +35,7 @@ export const routes: Routes = [
       },
       {
         path: 'Tablas',
+        canMatch:[rolesGuard(['Administrador'])],
         loadComponent: () =>
           import('./componentes/tablas/tablas.component').then(
             (m) => m.TablasComponent
