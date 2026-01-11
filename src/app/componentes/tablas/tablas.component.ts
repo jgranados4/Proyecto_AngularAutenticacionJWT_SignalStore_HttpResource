@@ -20,7 +20,6 @@ import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { faRepeat } from '@fortawesome/free-solid-svg-icons';
 import { UsuariosStoreService } from '@app/core/services';
 import { Usuario, UsuarioForm } from '@app/core/models/usuario';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { SignalStoreService } from '@app/core/services/TokenStore.service';
 
 @Component({
