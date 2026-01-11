@@ -1,48 +1,87 @@
-<form class="box" [formGroup]="formbuild" (ngSubmit)="login()">
-  <div class="field">
-    <label for="" class="label"> Email </label>
-    <div class="control">
-      <input
-        class="input"
-        formControlName="email"
-        type="email"
-        placeholder="Ingrese el Email"
-      />
-      @if(formbuild.get('email')?.hasError('required')){
-      <p>se requiere el Email</p>
-      }@else if ( formbuild.get('email')?.hasError('email') ) {
-      <p>el email no es valido</p>
+
+  <form class="box" [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+    
+    <h3 class="title is-4 has-text-centered mb-5">Iniciar Sesión</h3>
+
+    <!-- Campo Email -->
+    <div class="field">
+      <label class="label" for="email">Email</label>
+      <div class="control has-icons-left has-icons-right">
+        <input
+          id="email"
+          class="input"
+          [class.is-danger]="f.email.invalid && f.email.touched"
+          [class.is-success]="f.email.valid && f.email.touched"
+          formControlName="email"
+          type="email"
+          placeholder="ejemplo@correo.com"
+        />
+        <span class="icon is-small is-left">
+          <i class="fas fa-envelope"></i> <!-- Asumiendo FontAwesome disponible -->
+        </span>
+        
+        <!-- Icono de validación visual -->
+        @if (f.email.invalid && f.email.touched) {
+          <span class="icon is-small is-right has-text-danger">
+            <i class="fas fa-exclamation-triangle"></i>
+          </span>
+        }
+      </div>
+
+      <!-- Mensajes de Error (Control Flow @if) -->
+      @if (f.email.invalid && f.email.touched) {
+        <p class="help is-danger">
+          @if (f.email.hasError('required')) {
+            El correo es obligatorio.
+          } @else if (f.email.hasError('email')) {
+            Ingrese un formato de correo válido.
+          }
+        </p>
       }
     </div>
-  </div>
-  <div class="field">
-    <label for="" class="label"> contraseña </label>
-    <div class="control">
-      <input
-        class="input"
-        type="password"
-        formControlName="constrasena"
-        placeholder="Ingrese el contraseña"
-      />
-      @if(formbuild.get('constrasena')?.hasError('required')){
-      <p>se requiere la contrasena</p>
-      }@else if ( formbuild.get('constrasena')?.hasError('minlength') ) {
-      <p>la contrasena debe tener al menos 4 caracteres</p>
+
+    <!-- Campo Contraseña -->
+    <div class="field">
+      <label class="label" for="password">Contraseña</label>
+      <div class="control has-icons-left">
+        <input
+          id="password"
+          class="input"
+          [class.is-danger]="f.password.invalid && f.password.touched"
+          formControlName="password"
+          type="password"
+          placeholder="********"
+        />
+        <span class="icon is-small is-left">
+          <i class="fas fa-lock"></i>
+        </span>
+      </div>
+
+      @if (f.password.invalid && f.password.touched) {
+        <p class="help is-danger">
+          @if (f.password.hasError('required')) {
+            La contraseña es obligatoria.
+          } @else if (f.password.hasError('minlength')) {
+            Mínimo 4 caracteres.
+          }
+        </p>
       }
     </div>
-  </div>
-  <div class="field">
-    <p class="control">
-      <button
-        type="submit"
-        [disabled]="formbuild.invalid"
-        class="button is-success"
-      >
-        acceso
-      </button>
-    </p>
-  </div>
-</form>
-<!-- <pre>
-  {{ formbuild.value | json }}
-</pre> -->
+
+    <!-- Botón con estado de carga (Loading state) -->
+    <div class="field mt-5">
+      <div class="control">
+        <button
+          type="submit"
+          class="button is-success is-fullwidth"
+          [class.is-loading]="isLoading()"
+          [disabled]="loginForm.invalid || isLoading()"
+        >
+          <span class="icon is-small mr-2">
+            <i class="fas fa-sign-in-alt"></i>
+          </span>
+          <span>Acceder</span>
+        </button>
+      </div>
+    </div>
+  </form>
