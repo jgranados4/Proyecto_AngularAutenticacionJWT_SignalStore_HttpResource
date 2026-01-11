@@ -1,110 +1,79 @@
-<form class="box" [formGroup]="formbuil">
-  <div class="field">
-    <label for="" class="label"> Nombre </label>
-    <div class="control">
-      <input
-        class="input"
-        formControlName="nombre"
-        type="text"
-        placeholder="Ingrese el Nombre"
-      />
-      @if(formbuil.get('nombre')?.hasError('required')){
-      <p>se requiere el nombre</p>
-      }
-    </div>
-  </div>
-  <div class="field">
-    <label for="" class="label"> contraseña </label>
-    <div class="control">
-      <input
-        class="input"
-        formControlName="Contrasena"
-        type="password"
-        placeholder="Ingrese el contraseña"
-      />
-      <!-- ✨ INDICADOR DE FORTALEZA CON COMPUTED SIGNAL -->
-      @if(contrasenaValue()) {
-      <div class="password-strength mt-2">
-        <progress
-          class="progress {{ passwordStrength().color }}"
-          [value]="passwordStrength().percentage"
-          max="100"
-        ></progress>
-        <p class="help {{ passwordStrength().color }}">
-          Fortaleza: <strong>{{ passwordStrength().label }}</strong>
-        </p>
-      </div>
-      }
+<form class="box" [formGroup]="registerForm" (ngSubmit)="onSubmit()">
+  <h3 class="title is-4 has-text-centered mb-5">Crear Cuenta</h3>
 
-      <!-- Errores de validación -->
-      @if(shouldShowPasswordErrors()) {
-      <div class="errors-container mt-2">
-        <!-- Errores de frontend -->
-        @if(getPasswordFrontendErrors().length > 0) {
-        <ul class="help is-danger">
-          @for(msg of getPasswordFrontendErrors(); track $index) {
-          <li>{{ msg }}</li>
-          }
-        </ul>
-        }
-
-        <!-- Errores del backend -->
-        @if(getPasswordBackendErrors().length > 0) {
-        <ul class="help is-danger">
-          <li><strong>Errores del servidor:</strong></li>
-          @for(msg of getPasswordBackendErrors(); track $index) {
-          <li>{{ msg }}</li>
-          }
-        </ul>
-        }
-      </div>
-      }
-    </div>
-  </div>
+  <!-- Campo Nombre -->
   <div class="field">
-    <label for="" class="label"> Email </label>
-    <div class="control">
-      <input
-        class="input"
-        formControlName="email"
-        type="email"
-        placeholder="Ingrese el Email"
-      />
-      @if(formbuil.get('email')?.hasError('required')){
-      <p>se requiere el email</p>
-      }
+    <label class="label">Nombre</label>
+    <div class="control has-icons-left">
+      <input class="input" type="text" formControlName="nombre" placeholder="Tu nombre completo"
+             [class.is-danger]="f.nombre.invalid && f.nombre.touched">
+      <span class="icon is-small is-left"><i class="fas fa-user"></i></span>
     </div>
-  </div>
-  <div class="field">
-    <label for="" class="label">Rol</label>
-    <div class="control">
-      <label>
-        <input type="radio" formControlName="rol" value="cliente" />
-        Cliente
-      </label>
-      <label>
-        <input type="radio" formControlName="rol" value="Administrador" />
-        Administrador
-      </label>
-    </div>
-    @if( formbuil.get('userType')?.touched &&
-    formbuil.get('userType')?.hasError('required')){
-    <p>se requiere el email</p>
+    @if (f.nombre.hasError('required') && f.nombre.touched) {
+      <p class="help is-danger">El nombre es requerido</p>
     }
   </div>
 
+  <!-- Campo Password -->
   <div class="field">
-    <p class="control">
-      <button
-        class="button is-success"
-        (click)="registrar()"
-        [disabled]="formbuil.invalid"
-      >
-        acceso
-      </button>
-    </p>
+    <label class="label">Contraseña</label>
+    <div class="control has-icons-left">
+      <input class="input" type="password" formControlName="password" placeholder="********"
+             [class.is-danger]="f.password.invalid && f.password.touched">
+      <span class="icon is-small is-left"><i class="fas fa-lock"></i></span>
+    </div>
+    
+    <!-- Indicador de Fortaleza -->
+    @if (passwordStrength(); as st) {
+      <div class="mt-2">
+        <progress class="progress is-small {{st.color}}" [value]="st.val" max="100"></progress>
+        <p class="help {{st.color}} has-text-right">Fortaleza: <strong>{{st.label}}</strong></p>
+      </div>
+    }
+
+    <!-- Errores Password (Frontend & Backend) -->
+    @if (f.password.touched && f.password.invalid) {
+      <div class="help is-danger">
+        @if (f.password.hasError('required')) { <span>La contraseña es obligatoria.</span> }
+        @if (f.password.hasError('minlength')) { <span>Mínimo 8 caracteres.</span> }
+        @if (f.password.hasError('backend')) { <span>{{ f.password.getError('backend') }}</span> }
+        <!-- Puedes agregar más mensajes específicos si tu validator los devuelve -->
+      </div>
+    }
+  </div>
+
+  <!-- Campo Email -->
+  <div class="field">
+    <label class="label">Email</label>
+    <div class="control has-icons-left">
+      <input class="input" type="email" formControlName="email" placeholder="ejemplo@correo.com"
+             [class.is-danger]="f.email.invalid && f.email.touched">
+      <span class="icon is-small is-left"><i class="fas fa-envelope"></i></span>
+    </div>
+    @if (f.email.invalid && f.email.touched) {
+      <p class="help is-danger">Email inválido o requerido</p>
+    }
+  </div>
+
+  <!-- Campo Rol -->
+  <div class="field">
+    <label class="label">Rol</label>
+    <div class="control">
+      <label class="radio">
+        <input type="radio" formControlName="rol" value="cliente"> Cliente
+      </label>
+      <label class="radio">
+        <input type="radio" formControlName="rol" value="Administrador"> Administrador
+      </label>
+    </div>
+  </div>
+
+  <!-- Botón -->
+  <div class="field mt-5">
+    <button type="submit" class="button is-success is-fullwidth" 
+            [class.is-loading]="isLoading()" 
+            [disabled]="registerForm.invalid || isLoading()">
+      Registrarse
+    </button>
   </div>
 </form>
-<!-- <pre>
-  {{ formbuil.value | json }}
-</pre> -->
